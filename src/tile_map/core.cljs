@@ -50,27 +50,27 @@
   (let [texture (r/get-texture resource-key :nearest)
         tile-lookup
         {
-         "-" {:pos [0 0] :size [16 16]}
-         "T" {:pos [16 0] :size [16 16]}
-         "B" {:pos [0 16] :size [16 16]}
-         "O" {:pos [16 16] :size [16 16]}
-         "." {:pos [32 0] :size [16 16]}
-         "o" {:pos [32 16] :size [16 16]}
-         "X" {:pos [48 0] :size [16 16]}
-         "0" {:pos [48 16] :size [16 16]}
-         "/" {:pos [64 0] :size [16 16]}
-         "|" {:pos [64 16] :size [16 16]}
-         "b" {:pos [0 32] :size [16 16]}
-         "p" {:pos [16 32] :size [16 16]}
-         "c" {:pos [32 32] :size [16 16]}
-         "{" {:pos [0 48] :size [16 16]}
-         "}" {:pos [16 48] :size [16 16]}
-         "[" {:pos [0 64] :size [16 16]}
-         "]" {:pos [16 64] :size [16 16]}
+         "-" [0 0]
+         "T" [16 0]
+         "B" [0 16]
+         "O" [16 16]
+         "." [32 0]
+         "o" [32 16]
+         "X" [48 0]
+         "0" [48 16]
+         "/" [64 0]
+         "|" [64 16]
+         "b" [0 32]
+         "p" [16 32]
+         "c" [32 32]
+         "{" [0 48]
+         "}" [16 48]
+         "[" [0 64]
+         "]" [16 64]
          }
         ]
     (->> tile-lookup
-         (map (fn [[c {:keys [pos size]}]] [c (t/sub-texture texture pos size)]))
+         (map (fn [[c pos]] [c (t/sub-texture texture pos [16 16])]))
          (into {}))))
 
 (defn add-tiles! [batch tile-set tile-map]
