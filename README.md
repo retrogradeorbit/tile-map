@@ -4,7 +4,11 @@ Test out methods for making a single sprite sheet based tilemap that is performa
 
 ## Overview
 
-FIXME: Write a paragraph about the library/project and highlight its goals.
+A tile map implentation using ParticleContainer in Pixi.
+
+[WATCH THE DEMO NOW!](https://retrogradeorbit.github.io/tile-map/)
+
+Tiles from Brandon Jones. http://blog.tojicode.com/2012/07/sprite-tile-maps-on-gpu.html
 
 ## Setup
 
