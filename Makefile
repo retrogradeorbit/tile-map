@@ -1,7 +1,7 @@
 CSS=build/css/style.css
 APP=build/js/compiled/tile_map.js
 IDX=build/index.html
-IMG=build/img/sprites.png build/img/fonts.png build/img/cloud-text.png build/img/fighter-text.png build/img/cloud_1.png build/img/cloud_2.png build/img/cloud_3.png build/img/cloud_4.png build/img/cloud_5.png build/img/cloud_6.png build/img/cloud_7.png build/img/cloud_8.png build/img/cloud_9.png build/img/cloud_10.png
+IMG=build/img/tiles.png
 IMG_PUBLIC=$(subst build,resources/public,$(IMG))
 SFX_SOURCE=$(wildcard resources/public/sfx/*.ogg)
 SFX=$(subst resources/public,build,$(SFX_SOURCE))
