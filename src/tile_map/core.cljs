@@ -87,8 +87,8 @@
 
 (defn add-bg-tiles! [batch tile-set]
   (doall
-   (for [row (range -20 50)
-         col (range -20 50)]
+   (for [row (range -20 20)
+         col (range -20 20)]
      (do
        (log (nth ["{" "}" "[" "]"] (+ (mod col 2) (mod row 2))))
        (.addChild
@@ -127,10 +127,12 @@
            tilemap batch
            ]
           (loop [theta 0]
-            (let [x (+ -1000 (* 500 (Math/sin theta)))
+            (let [x (+ -2000 (* 1000 (Math/sin theta)))
                   y (+ -1000 (* 500 (Math/cos theta)))]
               (s/set-pos! batch (int x) (int y))
-              (s/set-pos! background (int (* x 0.75)) (int (* y 0.75)))
+              (s/set-pos! background
+                          (mod (int (* x 0.90)) (* 4 32))
+                          (mod (int (* y 0.90)) ( * 4 32)))
                                         ;; bug
                                         ;(s/set-pos! batch (+ 0.5 (int x)) (+ 0.5 (int y)))
               (<! (e/next-frame))
