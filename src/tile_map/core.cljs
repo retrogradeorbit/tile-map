@@ -89,13 +89,11 @@
   (doall
    (for [row (range -20 20)
          col (range -20 20)]
-     (do
-       (log (nth ["{" "}" "[" "]"] (+ (mod col 2) (mod row 2))))
-       (.addChild
-                  batch
-                  (s/make-sprite (tile-set (nth ["{" "}" "[" "]"] (+ (mod col 2) (mod row 2))))
-                                 :x (* 16 col) :y (* 16 row)
-                                 :xhandle 0 :yhandle 0))))))
+     (.addChild
+      batch
+      (s/make-sprite (tile-set (nth ["{" "}" "[" "]"] (+ (mod col 2) (mod row 2))))
+                     :x (* 16 col) :y (* 16 row)
+                     :xhandle 0 :yhandle 0)))))
 
 (defonce canvas
   (c/init {:layers [:bg :tilemap :ui]
@@ -136,4 +134,6 @@
                                         ;; bug
                                         ;(s/set-pos! batch (+ 0.5 (int x)) (+ 0.5 (int y)))
               (<! (e/next-frame))
-              (recur (+ theta 0.006))))))))
+              (recur (+ theta 0.006))))
+
+))))
