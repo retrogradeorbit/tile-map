@@ -136,15 +136,4 @@
                                         ;; bug
                                         ;(s/set-pos! batch (+ 0.5 (int x)) (+ 0.5 (int y)))
               (<! (e/next-frame))
-              (recur (+ theta 0.003)))))
-
-      (comment ;; linear with widened textures
-
-        (m/with-sprite canvas :tilemap
-          [tilemap batch]
-          (loop [x 0 y 0]
-            (s/set-pos! batch x y)
-                                        ;; bug
-                                        ;(s/set-pos! batch (+ 0.5 (int x)) (+ 0.5 (int y)))
-            (<! (e/next-frame))
-            (recur (- x 0.01) (- y 0.01))))))))
+              (recur (+ theta 0.006))))))))
