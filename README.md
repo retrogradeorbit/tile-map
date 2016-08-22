@@ -8,7 +8,7 @@ A tile map implentation using ParticleContainer in Pixi.
 
 [WATCH THE DEMO NOW!](https://retrogradeorbit.github.io/tile-map/)
 
-Tiles from Brandon Jones. http://blog.tojicode.com/2012/07/sprite-tile-maps-on-gpu.html
+Tiles from Brandon Jones. http://blog.tojicode.com/2012/07/sprite-tile-maps-on-gpu.html Who lifted them from Spelunky: http://www.spelunkyworld.com/
 
 ## Setup
 
