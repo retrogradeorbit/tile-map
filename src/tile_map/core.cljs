@@ -63,10 +63,6 @@
          "b" [0 32]
          "p" [16 32]
          "c" [32 32]
-         "{" [0 48]
-         "}" [16 48]
-         "[" [0 64]
-         "]" [16 64]
          }
         ]
     (->> tile-lookup
@@ -79,21 +75,10 @@
          col (range (count (first tile-map)))]
      (let [char (nth (tile-map row) col)]
        (when (not= " " char)
-         (.addChild
-          batch
+         (.addChild batch
           (s/make-sprite (tile-set char)
                          :x (* 16 col) :y (* 16 row)
                          :xhandle 0 :yhandle 0)))))))
-
-(defn add-bg-tiles! [batch tile-set]
-  (doall
-   (for [row (range -20 20)
-         col (range -20 20)]
-     (.addChild
-      batch
-      (s/make-sprite (tile-set (nth ["{" "}" "[" "]"] (+ (mod col 2) (mod row 2))))
-                     :x (* 16 col) :y (* 16 row)
-                     :xhandle 0 :yhandle 0)))))
 
 (defonce canvas
   (c/init {:layers [:bg :tilemap :ui]
@@ -103,37 +88,31 @@
 (defonce main
   (go
     ;; load image tilesets
-    (<! (r/load-resources canvas :ui
-                          [
-                           "img/tiles.png"
-                           ]))
+    (<! (r/load-resources canvas :ui ["img/tiles.png"]))
 
     ;; make the tile texture lookup
     (let [tile-set (make-tile-set :tiles)
-          bg (js/PIXI.ParticleContainer.)
+          bg (js/PIXI.TilingSprite.
+              (t/sub-texture
+               (r/get-texture :tiles :nearest)
+               [0 48] [32 32])
+              1000 1000)
           batch (js/PIXI.ParticleContainer.)
           ]
       (add-tiles! batch tile-set tile-map)
-      (add-bg-tiles! bg tile-set)
       (s/set-scale! batch 4)
       (s/set-scale! bg 4)
 
       ;; nearest
       (m/with-sprite canvas :tilemap
-          [
-           background bg
-           tilemap batch
-           ]
+          [background bg
+           tilemap batch]
           (loop [theta 0]
             (let [x (+ -2000 (* 1000 (Math/sin theta)))
                   y (+ -1000 (* 500 (Math/cos theta)))]
               (s/set-pos! batch (int x) (int y))
               (s/set-pos! background
-                          (mod (int (* x 0.90)) (* 4 32))
-                          (mod (int (* y 0.90)) ( * 4 32)))
-                                        ;; bug
-                                        ;(s/set-pos! batch (+ 0.5 (int x)) (+ 0.5 (int y)))
+                          (+ -2000 (mod (int (* x 0.90)) (* 4 32)))
+                          (+ -2000 (mod (int (* y 0.90)) ( * 4 32))))
               (<! (e/next-frame))
-              (recur (+ theta 0.006))))
-
-))))
+              (recur (+ theta 0.006))))))))
