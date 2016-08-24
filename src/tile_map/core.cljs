@@ -4,6 +4,8 @@
             [infinitelives.pixi.canvas :as c]
             [infinitelives.pixi.sprite :as s]
             [infinitelives.utils.events :as e]
+            [infinitelives.utils.gamepad :as gp]
+            [infinitelives.utils.vec2 :as vec2]
             [infinitelives.utils.console :refer [log]])
   (:require-macros [cljs.core.async.macros :refer [go]]
                    [infinitelives.pixi.macros :as m]))
@@ -85,6 +87,12 @@
            :background bg-colour
            :expand true}))
 
+(defn set-player [player x y]
+  (let [px 1.5 py 4.5]
+    (s/set-pos!
+     player
+     (+ x (* 16 4 px)) (+ y (* 16 4 py)))))
+
 (defonce main
   (go
     ;; load image tilesets
@@ -98,6 +106,8 @@
                [0 48] [32 32])
               1000 1000)
           batch (js/PIXI.ParticleContainer.)
+          stand (t/sub-texture (r/get-texture :tiles :nearest) [0 96] [16 16])
+          walk (t/sub-texture (r/get-texture :tiles :nearest) [16 96] [16 16])
           ]
       (add-tiles! batch tile-set tile-map)
       (s/set-scale! batch 4)
@@ -106,13 +116,24 @@
       ;; nearest
       (m/with-sprite canvas :tilemap
           [background bg
-           tilemap batch]
-          (loop [theta 0]
-            (let [x (+ -2000 (* 1000 (Math/sin theta)))
-                  y (+ -1000 (* 500 (Math/cos theta)))]
+           tilemap batch
+           player (s/make-sprite stand :scale 4)]
+          (loop [pos (vec2/vec2 -500 -400) fnum 0]
+            (let [x (vec2/get-x pos) ;; (+ -2000 (* 1000 (Math/sin theta)))
+                  y (vec2/get-y pos) ;; (+ -1000 (* 500 (Math/cos theta)))
+                  ]
+              ;(s/set-texture! player (if (zero? (mod (int (/ fnum 10)) 2)) stand walk))
+
+              (set-player player (int x) (int y))
+
               (s/set-pos! batch (int x) (int y))
               (s/set-pos! background
                           (+ -2000 (mod (int (* x 0.90)) (* 4 32)))
                           (+ -2000 (mod (int (* y 0.90)) ( * 4 32))))
+
               (<! (e/next-frame))
-              (recur (+ theta 0.006))))))))
+              (recur (vec2/sub
+                      pos
+                      (vec2/scale (vec2/vec2 (or (gp/axis 0) 0)
+                                             (or (gp/axis 1) 0))
+                                  5)) (inc fnum))))))))
