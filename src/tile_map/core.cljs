@@ -71,6 +71,12 @@
          (map (fn [[c pos]] [c (t/sub-texture texture pos [16 16])]))
          (into {}))))
 
+(defn get-tile-at [x y]
+  (nth (tile-map y) x))
+
+(defn not-passable? [x y]
+  (#{"T" "-" "B" "O"} (get-tile-at x y)))
+
 (defn add-tiles! [batch tile-set tile-map]
   (doall
    (for [row (range (count tile-map))
@@ -87,11 +93,27 @@
            :background bg-colour
            :expand true}))
 
-(defn set-player [player x y]
-  (let [px 1.5 py 4.5]
-    (s/set-pos!
-     player
-     (+ x (* 16 4 px)) (+ y (* 16 4 py)))))
+(defn set-player [player x y px py]
+  (s/set-pos!
+   player
+   (+ x (* 16 4 px)) (+ y (* 16 4 py))))
+
+(defn constrain [newpos oldpos]
+  (let [px (vec2/get-x newpos)
+        py (vec2/get-y newpos)
+        pix (int px)
+        piy (int py)
+        dx (- px pix)
+        dy (- py piy)]
+
+    (if (not-passable? pix piy)
+        (do (log "not" oldpos newpos)
+            oldpos)
+        (do (log "pas" oldpos newpos)
+            newpos)
+        )
+    )
+  )
 
 (defonce main
   (go
@@ -115,25 +137,36 @@
 
       ;; nearest
       (m/with-sprite canvas :tilemap
-          [background bg
-           tilemap batch
-           player (s/make-sprite stand :scale 4)]
-          (loop [pos (vec2/vec2 -500 -400) fnum 0]
-            (let [x (vec2/get-x pos) ;; (+ -2000 (* 1000 (Math/sin theta)))
-                  y (vec2/get-y pos) ;; (+ -1000 (* 500 (Math/cos theta)))
-                  ]
-              ;(s/set-texture! player (if (zero? (mod (int (/ fnum 10)) 2)) stand walk))
+        [background bg
+         tilemap batch
+         player (s/make-sprite stand :scale 4)]
+        (loop [pos (vec2/vec2 -500 -400) fnum 0
+               ppos (vec2/vec2 1.5 4.5)]
+          (let [x (vec2/get-x pos) ;; (+ -2000 (* 1000 (Math/sin theta)))
+                y (vec2/get-y pos) ;; (+ -1000 (* 500 (Math/cos theta)))
 
-              (set-player player (int x) (int y))
+                px (vec2/get-x ppos)
+                py (vec2/get-y ppos)
+                pix (int px)
+                piy (int py)
+                dx (- px pix)
+                dy (- py piy)
 
-              (s/set-pos! batch (int x) (int y))
-              (s/set-pos! background
-                          (+ -2000 (mod (int (* x 0.90)) (* 4 32)))
-                          (+ -2000 (mod (int (* y 0.90)) ( * 4 32))))
+                joy (vec2/vec2 (or (gp/axis 0) 0)
+                               (or (gp/axis 1) 0))
+                ]
+                                        ;(s/set-texture! player (if (zero? (mod (int (/ fnum 10)) 2)) stand walk))
 
-              (<! (e/next-frame))
-              (recur (vec2/sub
-                      pos
-                      (vec2/scale (vec2/vec2 (or (gp/axis 0) 0)
-                                             (or (gp/axis 1) 0))
-                                  5)) (inc fnum))))))))
+            (set-player player (int x) (int y) px py)
+
+            (s/set-pos! batch (int x) (int y))
+            (s/set-pos! background
+                        (+ -2000 (mod (int (* x 0.90)) (* 4 32)))
+                        (+ -2000 (mod (int (* y 0.90)) ( * 4 32))))
+
+            (<! (e/next-frame))
+            (recur pos (inc fnum)
+                   (-> joy
+                       (vec2/scale 0.1)
+                       (vec2/add ppos)
+                       (constrain ppos)))))))))
