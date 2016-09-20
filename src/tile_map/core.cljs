@@ -100,6 +100,16 @@
    player
    (+ x (* 16 4 px)) (+ y (* 16 4 py))))
 
+(defn vec2->parts [pos]
+  (let [x (vec2/get-x pos)
+        y (vec2/get-y pos)
+        ix (int x)
+        iy (int y)
+        fx (- x ix)
+        fy (- y iy)]
+    [x y ix iy fx fy])
+  )
+
 (defn constrain [newpos oldpos]
   (let [px (vec2/get-x newpos)
         py (vec2/get-y newpos)
