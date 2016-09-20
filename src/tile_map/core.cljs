@@ -111,19 +111,28 @@
   )
 
 (defn constrain [newpos oldpos]
-  (let [px (vec2/get-x newpos)
-        py (vec2/get-y newpos)
-        pix (int px)
-        piy (int py)
-        dx (- px pix)
-        dy (- py piy)]
+  (let [[nx ny nix niy nfx nfy] (vec2->parts newpos)
+        [ox oy oix oiy ofx ofy] (vec2->parts oldpos)
+        dx (- nix oix)
+        dy (- niy oiy)
 
-    (if (not-passable? pix piy)
-        (do (log "not" oldpos newpos)
-            oldpos)
-        (do (log "pas" oldpos newpos)
-            newpos)
-        )
+        down? (pos? dy)
+        up? (neg? dy)
+        horiz? (zero? dy)
+
+        right? (pos? dx)
+        left? (neg? dx)
+        vert? (zero? dx)
+        ]
+
+    (if (passable? nix niy)
+      newpos
+
+      ;; new tile collides
+      (if up?
+        (vec2/vec2 nx oy)
+        oldpos)
+      )
     )
   )
 
