@@ -77,6 +77,8 @@
 (defn not-passable? [x y]
   (#{"T" "-" "B" "O"} (get-tile-at x y)))
 
+(def passable? (comp not not-passable?))
+
 (defn add-tiles! [batch tile-set tile-map]
   (doall
    (for [row (range (count tile-map))
