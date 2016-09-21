@@ -129,9 +129,12 @@
       newpos
 
       ;; new tile collides
-      (if up?
-        (vec2/vec2 nx oy)
-        oldpos)
+      (cond
+        (and vert? (or up? down?)) (vec2/vec2 nx oy) ;; TODO: oy needs to be cast to edge
+        (and horiz? (or left? right?)) (vec2/vec2 ox ny)
+        (passable? nix oiy) (vec2/vec2 nx oy)
+        (passable? oix niy) (vec2/vec2 ox ny)
+        :default oldpos)
       )
     )
   )
