@@ -189,7 +189,8 @@
                         (+ -2000 (mod (int (* y 0.90)) ( * 4 32))))
 
             (<! (e/next-frame))
-            (recur pos (inc fnum)
+            (recur pos
+                   (inc fnum)
                    (-> joy
                        (vec2/scale 0.1)
                        (vec2/add ppos)
