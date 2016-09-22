@@ -110,6 +110,9 @@
     [x y ix iy fx fy])
   )
 
+(def edge 0.01)
+(def minus-edge (- 1 edge))
+
 (defn constrain [newpos oldpos]
   (let [[nx ny nix niy nfx nfy] (vec2->parts newpos)
         [ox oy oix oiy ofx ofy] (vec2->parts oldpos)
@@ -130,10 +133,10 @@
 
       ;; new tile collides
       (cond
-        (and vert? (or up? down?)) (vec2/vec2 nx oy) ;; TODO: oy needs to be cast to edge
-        (and horiz? (or left? right?)) (vec2/vec2 ox ny)
-        (passable? nix oiy) (vec2/vec2 nx oy)
-        (passable? oix niy) (vec2/vec2 ox ny)
+        (and vert? (or up? down?)) (vec2/vec2 nx (+ oiy (if up? edge minus-edge))) ;; TODO: oy needs to be cast to edge
+        (and horiz? (or left? right?)) (vec2/vec2 (+ oix (if left? edge minus-edge)) ny)
+        (passable? nix oiy) (vec2/vec2 nx (+ oiy (if up? edge minus-edge)))
+        (passable? oix niy) (vec2/vec2 (+ oix (if left? edge minus-edge)) ny)
         :default oldpos)
       )
     )
