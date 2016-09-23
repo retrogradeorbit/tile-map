@@ -110,7 +110,7 @@
     [x y ix iy fx fy])
   )
 
-(def edge 0.01)
+(def edge 0.3)
 (def minus-edge (- 1 edge))
 
 (defn constrain [newpos oldpos]
@@ -129,7 +129,14 @@
         ]
 
     (if (passable? nix niy)
-      newpos
+      (cond
+        (and (not-passable? nix (dec niy)) (< nfy edge))
+        (vec2/vec2 nx (+ niy edge))
+
+        (and (not-passable? (dec nix) niy) (< nfx edge))
+        (vec2/vec2 (+ nix edge) ny)
+
+        :default newpos)
 
       ;; new tile collides
       (cond
