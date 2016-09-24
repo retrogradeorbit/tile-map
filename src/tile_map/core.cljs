@@ -129,14 +129,25 @@
         ]
 
     (if (passable? nix niy)
-      (cond
-        (and (not-passable? nix (dec niy)) (< nfy edge))
-        (vec2/vec2 nx (+ niy edge))
+      (vec2/vec2
+       (cond
+         (and (not-passable? (dec nix) niy) (< nfx edge))
+         (+ nix edge)
 
-        (and (not-passable? (dec nix) niy) (< nfx edge))
-        (vec2/vec2 (+ nix edge) ny)
+         (and (not-passable? (inc nix) niy) (> nfx minus-edge))
+         (+ nix minus-edge)
 
-        :default newpos)
+         :default
+         nx)
+
+       (cond
+         (and (not-passable? nix (dec niy)) (< nfy edge))
+         (+ niy edge)
+
+         (and (not-passable? nix (inc niy)) (> nfy minus-edge))
+         (+ niy minus-edge)
+
+         :default ny))
 
       ;; new tile collides
       (cond
