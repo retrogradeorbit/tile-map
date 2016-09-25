@@ -119,7 +119,7 @@
 (def v-edge 0.40)
 (def minus-v-edge (- 1 v-edge))
 
-(defn constrain [newpos oldpos]
+(defn apply-edge-constraints [oldpos newpos]
   (let [[nx ny nix niy nfx nfy] (vec2->parts newpos)
         [ox oy oix oiy ofx ofy] (vec2->parts oldpos)
         dx (- nix oix)
@@ -155,127 +155,145 @@
         not-pass-top-left? (not pass-top-left?)
         not-pass-bottom-left? (not pass-bottom-left?)
         not-pass-top-right? (not pass-top-right?)
-        not-pass-bottom-right? (not pass-bottom-right?)
+        not-pass-bottom-right? (not pass-bottom-right?)]
+    (match [<left-edge >right-edge <top-edge >bottom-edge
+            pass-top-left? pass-top? pass-top-right?
+            pass-left? pass? pass-right?
+            pass-bottom-left? pass-bottom? pass-bottom-right?]
+
+           ;; outer top-right corner
+           [true _ _ true
+            _ _ _
+            true true _
+            false true _]
+           (let [ddx (- h-edge nfx) ddy (- nfy minus-v-edge)]
+             (if (< ddx ddy)
+               (vec2/vec2 (+ nix h-edge) ny)
+               (vec2/vec2 nx (+ niy minus-v-edge))))
+
+           ;; outer bottom-right corner
+           [true _ true _
+            false true _
+            true true _
+            _ _ _]
+           (let [ddx (- h-edge nfx) ddy (- v-edge nfy)]
+             (if (< ddx ddy)
+               (vec2/vec2 (+ nix h-edge) ny)
+               (vec2/vec2 nx (+ niy v-edge))))
+
+           ;; outer top left
+           [_ true _ true
+            _ _ _
+            _ true true
+            _ true false]
+           (let [ddx (- nfx minus-h-edge) ddy (- nfy minus-v-edge)]
+             (if (< ddx ddy)
+               (vec2/vec2 (+ nix minus-h-edge) ny)
+               (vec2/vec2 nx (+ niy minus-v-edge))))
+
+           ;; outer bottom left
+           [_ true true _
+            _ true false
+            _ true true
+            _ _ _]
+           (let [ddx (- nfx minus-h-edge) ddy (- v-edge nfy)]
+             (if (< ddx ddy)
+               (vec2/vec2 (+ nix minus-h-edge) ny)
+               (vec2/vec2 nx (+ niy v-edge))))
+
+           ;; inner bottom left
+           [true _ _ true
+            _ _ _
+            false true _
+            false false _]
+           (vec2/vec2 (+ nix h-edge) (+ niy minus-v-edge))
+
+           ;; inner top left
+           [true _ true _
+            false false _
+            false true _
+            _ _ _]
+           (vec2/vec2 (+ nix h-edge) (+ niy v-edge))
+
+           ;; inner top right
+           [_ true true _
+            _ false false
+            _ true false
+            _ _ _]
+           (vec2/vec2 (+ nix minus-h-edge) (+ niy v-edge))
+
+           ;; inner bottom right
+           [_ true _ true
+            _ _ _
+            _ true false
+            _ false false]
+           (vec2/vec2 (+ nix minus-h-edge) (+ niy minus-v-edge))
+
+           ;; right edge
+           [true _ _ _
+            _ _ _
+            false _ _
+            _ _ _]
+           (vec2/vec2 (+ nix h-edge) ny)
+
+           ;; left edge
+           [_ true _ _
+            _ _ _
+            _ _ false
+            _ _ _]
+           (vec2/vec2 (+ nix minus-h-edge) ny)
+
+           ;; bottom edge
+           [_ _ true _
+            _ false _
+            _ _ _
+            _ _ _]
+           (vec2/vec2 nx (+ niy v-edge))
+
+           ;; top edge
+           [_ _ _ true
+            _ _ _
+            _ _ _
+            _ false _]
+           (vec2/vec2 nx (+ niy minus-v-edge))
+
+           ;; open space
+           [_ _ _ _
+            _ _ _
+            _ _ _
+            _ _ _]
+           newpos))
+  )
+
+(defn constrain [newpos oldpos]
+  (let [[nx ny nix niy nfx nfy] (vec2->parts newpos)
+        [ox oy oix oiy ofx ofy] (vec2->parts oldpos)
+        dx (- nix oix)
+        dy (- niy oiy)
+
+        down? (pos? dy)
+        up? (neg? dy)
+        horiz? (zero? dy)
+
+        right? (pos? dx)
+        left? (neg? dx)
+        vert? (zero? dx)
         ]
     (if (and (> 2 (Math/abs dx)) (> 2 (Math/abs dy)))
       ;; small +/- 1 tile movements
       (if (passable? nix niy)
         ;; in an open square. apply edge contsraints
-        (match [<left-edge >right-edge <top-edge >bottom-edge
-                pass-top-left? pass-top? pass-top-right?
-                pass-left? pass? pass-right?
-                pass-bottom-left? pass-bottom? pass-bottom-right?]
-
-               ;; outer top-right corner
-               [true _ _ true
-                _ _ _
-                true true _
-                false true _]
-               (let [ddx (- h-edge nfx) ddy (- nfy minus-v-edge)]
-                 (if (< ddx ddy)
-                   (vec2/vec2 (+ nix h-edge) ny)
-                   (vec2/vec2 nx (+ niy minus-v-edge))))
-
-               ;; outer bottom-right corner
-               [true _ true _
-                false true _
-                true true _
-                _ _ _]
-               (let [ddx (- h-edge nfx) ddy (- v-edge nfy)]
-                 (if (< ddx ddy)
-                   (vec2/vec2 (+ nix h-edge) ny)
-                   (vec2/vec2 nx (+ niy v-edge))))
-
-               ;; outer top left
-               [_ true _ true
-                _ _ _
-                _ true true
-                _ true false]
-               (let [ddx (- nfx minus-h-edge) ddy (- nfy minus-v-edge)]
-                 (if (< ddx ddy)
-                   (vec2/vec2 (+ nix minus-h-edge) ny)
-                   (vec2/vec2 nx (+ niy minus-v-edge))))
-
-               ;; outer bottom left
-               [_ true true _
-                _ true false
-                _ true true
-                _ _ _]
-               (let [ddx (- nfx minus-h-edge) ddy (- v-edge nfy)]
-                 (if (< ddx ddy)
-                   (vec2/vec2 (+ nix minus-h-edge) ny)
-                   (vec2/vec2 nx (+ niy v-edge))))
-
-               ;; inner bottom left
-               [true _ _ true
-                _ _ _
-                false true _
-                false false _]
-               (vec2/vec2 (+ nix h-edge) (+ niy minus-v-edge))
-
-               ;; inner top left
-               [true _ true _
-                false false _
-                false true _
-                _ _ _]
-               (vec2/vec2 (+ nix h-edge) (+ niy v-edge))
-
-               ;; inner top right
-               [_ true true _
-                _ false false
-                _ true false
-                _ _ _]
-               (vec2/vec2 (+ nix minus-h-edge) (+ niy v-edge))
-
-               ;; inner bottom right
-               [_ true _ true
-                _ _ _
-                _ true false
-                _ false false]
-               (vec2/vec2 (+ nix minus-h-edge) (+ niy minus-v-edge))
-
-               ;; right edge
-               [true _ _ _
-                _ _ _
-                false _ _
-                _ _ _]
-               (vec2/vec2 (+ nix h-edge) ny)
-
-               ;; left edge
-               [_ true _ _
-                _ _ _
-                _ _ false
-                _ _ _]
-               (vec2/vec2 (+ nix minus-h-edge) ny)
-
-               ;; bottom edge
-               [_ _ true _
-                _ false _
-                _ _ _
-                _ _ _]
-               (vec2/vec2 nx (+ niy v-edge))
-
-               ;; top edge
-               [_ _ _ true
-                _ _ _
-                _ _ _
-                _ false _]
-               (vec2/vec2 nx (+ niy minus-v-edge))
-
-               ;; open space
-               [_ _ _ _
-                _ _ _
-                _ _ _
-                _ _ _]
-               newpos)
+        (apply-edge-constraints oldpos newpos)
 
         ;; new tile collides. moving so fast got embedded in other tile. eject drastically!
-        (cond
-          (and vert? (or up? down?)) (vec2/vec2 nx (+ oiy (if up? v-edge minus-v-edge)))
-          (and horiz? (or left? right?)) (vec2/vec2 (+ oix (if left? h-edge minus-h-edge)) ny)
-          (passable? nix oiy) (vec2/vec2 nx (+ oiy (if up? v-edge minus-v-edge)))
-          (passable? oix niy) (vec2/vec2 (+ oix (if left? h-edge minus-h-edge)) ny)
-          :default oldpos))
+        (apply-edge-constraints
+         oldpos
+         (cond
+           (and vert? (or up? down?)) (vec2/vec2 nx (+ oiy (if up? v-edge minus-v-edge)))
+           (and horiz? (or left? right?)) (vec2/vec2 (+ oix (if left? h-edge minus-h-edge)) ny)
+           (passable? nix oiy) (vec2/vec2 nx (+ oiy (if up? v-edge minus-v-edge)))
+           (passable? oix niy) (vec2/vec2 (+ oix (if left? h-edge minus-h-edge)) ny)
+           :default oldpos)))
 
       ;; large >=2 tile movements
       ;; walk from start to finish tile. check each one for passability
@@ -283,7 +301,7 @@
       (let [points (line/intify (line/bresenham oix oiy nix niy))]
         (log "JUMP" dx dy)
         (loop [[[x y] & r] points]
-          (log [x y])
+          (log [x y] (passable? x y))
           (if (passable? x y)
             (if (zero? (count r))
               ;; no colision found
@@ -293,12 +311,14 @@
               (recur r))
 
             ;; not passable! reject from this tile
-            (cond
-              (and vert? (or up? down?)) (vec2/vec2 nx (+ oiy (if up? v-edge minus-v-edge)))
-              (and horiz? (or left? right?)) (vec2/vec2 (+ oix (if left? h-edge minus-h-edge)) ny)
-              (passable? x oiy) (vec2/vec2 nx (+ oiy (if up? v-edge minus-v-edge)))
-              (passable? oix y) (vec2/vec2 (+ oix (if left? h-edge minus-h-edge)) ny)
-              :default oldpos)))))))
+            (apply-edge-constraints
+             oldpos
+             (cond
+               (and vert? (or up? down?)) (vec2/vec2 nx (+ oiy (if up? v-edge minus-v-edge)))
+               (and horiz? (or left? right?)) (vec2/vec2 (+ oix (if left? h-edge minus-h-edge)) ny)
+               (passable? x oiy) (vec2/vec2 nx (+ oiy (if up? v-edge minus-v-edge)))
+               (passable? oix y) (vec2/vec2 (+ oix (if left? h-edge minus-h-edge)) ny)
+               :default oldpos))))))))
 
 (defonce main
   (go
