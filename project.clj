@@ -10,6 +10,7 @@
                  [org.clojure/clojurescript "1.9.89"]
                  [org.clojure/core.async "0.2.385"
                   :exclusions [org.clojure/tools.reader]]
+                 [org.clojure/core.match "0.3.0-alpha4"]
 
                  [infinitelives/infinitelives.pixi "0.1.1-SNAPSHOT"]
                  [binaryage/devtools "0.7.2"]

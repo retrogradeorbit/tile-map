@@ -6,7 +6,8 @@
             [infinitelives.utils.events :as e]
             [infinitelives.utils.gamepad :as gp]
             [infinitelives.utils.vec2 :as vec2]
-            [infinitelives.utils.console :refer [log]])
+            [infinitelives.utils.console :refer [log]]
+            [cljs.core.match :refer-macros [match]])
   (:require-macros [cljs.core.async.macros :refer [go]]
                    [infinitelives.pixi.macros :as m]))
 
@@ -128,30 +129,143 @@
         right? (pos? dx)
         left? (neg? dx)
         vert? (zero? dx)
+
+        <left-edge (< nfx h-edge)
+        >right-edge (> nfx minus-h-edge)
+        <top-edge (< nfy v-edge)
+        >bottom-edge (> nfy minus-v-edge)
+
+        pass? (passable? nix niy)
+        pass-left? (passable? (dec nix) niy)
+        pass-right? (passable? (inc nix) niy)
+        pass-top? (passable? nix (dec niy))
+        pass-bottom? (passable? nix (inc niy))
+        pass-top-left? (passable? (dec nix) (dec niy))
+        pass-bottom-left? (passable? (dec nix) (inc niy))
+        pass-top-right? (passable? (inc nix) (dec niy))
+        pass-bottom-right? (passable? (inc nix) (inc niy))
+
+        not-pass-left? (not pass-left?)
+        not-pass-right? (not pass-right?)
+        not-pass-top? (not pass-top?)
+        not-pass-bottom? (not pass-bottom?)
+        not-pass-top-left? (not pass-top-left?)
+        not-pass-bottom-left? (not pass-bottom-left?)
+        not-pass-top-right? (not pass-top-right?)
+        not-pass-bottom-right? (not pass-bottom-right?)
         ]
 
     (if (passable? nix niy)
-      (vec2/vec2
-       (cond
-         (and (not-passable? (dec nix) niy) (< nfx h-edge))
-         (+ nix h-edge)
+      ;; in an open square. apply edge contsraints
+      (match [<left-edge >right-edge <top-edge >bottom-edge
+              pass-top-left? pass-top? pass-top-right?
+              pass-left? pass? pass-right?
+              pass-bottom-left? pass-bottom? pass-bottom-right?]
 
-         (and (not-passable? (inc nix) niy) (> nfx minus-h-edge))
-         (+ nix minus-h-edge)
+             ;; outer top-right corner
+             [true _ _ true
+              _ _ _
+              true true _
+              false true _]
+             (let [ddx (- h-edge nfx) ddy (- nfy minus-v-edge)]
+               (if (< ddx ddy)
+                 (vec2/vec2 (+ nix h-edge) ny)
+                 (vec2/vec2 nx (+ niy minus-v-edge))))
 
-         :default
-         nx)
+             ;; outer bottom-right corner
+             [true _ true _
+              false true _
+              true true _
+              _ _ _]
+             (let [ddx (- h-edge nfx) ddy (- v-edge nfy)]
+               (if (< ddx ddy)
+                 (vec2/vec2 (+ nix h-edge) ny)
+                 (vec2/vec2 nx (+ niy v-edge))))
 
-       (cond
-         (and (not-passable? nix (dec niy)) (< nfy v-edge))
-         (+ niy v-edge)
+             ;; outer top left
+             [_ true _ true
+              _ _ _
+              _ true true
+              _ true false]
+             (let [ddx (- nfx minus-h-edge) ddy (- nfy minus-v-edge)]
+               (if (< ddx ddy)
+                 (vec2/vec2 (+ nix minus-h-edge) ny)
+                 (vec2/vec2 nx (+ niy minus-v-edge))))
 
-         (and (not-passable? nix (inc niy)) (> nfy minus-v-edge))
-         (+ niy minus-v-edge)
+             ;; outer bottom left
+             [_ true true _
+              _ true false
+              _ true true
+              _ _ _]
+             (let [ddx (- nfx minus-h-edge) ddy (- v-edge nfy)]
+               (if (< ddx ddy)
+                 (vec2/vec2 (+ nix minus-h-edge) ny)
+                 (vec2/vec2 nx (+ niy v-edge))))
 
-         :default ny))
+             ;; inner bottom left
+             [true _ _ true
+              _ _ _
+              false true _
+              false false _]
+             (vec2/vec2 (+ nix h-edge) (+ niy minus-v-edge))
 
-      ;; new tile collides
+             ;; inner top left
+             [true _ true _
+              false false _
+              false true _
+              _ _ _]
+             (vec2/vec2 (+ nix h-edge) (+ niy v-edge))
+
+             ;; inner top right
+             [_ true true _
+              _ false false
+              _ true false
+              _ _ _]
+             (vec2/vec2 (+ nix minus-h-edge) (+ niy v-edge))
+
+             ;; inner bottom right
+             [_ true _ true
+              _ _ _
+              _ true false
+              _ false false]
+             (vec2/vec2 (+ nix minus-h-edge) (+ niy minus-v-edge))
+
+             ;; right edge
+             [true _ _ _
+              _ _ _
+              false _ _
+              _ _ _]
+             (vec2/vec2 (+ nix h-edge) ny)
+
+             ;; left edge
+             [_ true _ _
+              _ _ _
+              _ _ false
+              _ _ _]
+             (vec2/vec2 (+ nix minus-h-edge) ny)
+
+             ;; bottom edge
+             [_ _ true _
+              _ false _
+              _ _ _
+              _ _ _]
+             (vec2/vec2 nx (+ niy v-edge))
+
+             ;; top edge
+             [_ _ _ true
+              _ _ _
+              _ _ _
+              _ false _]
+             (vec2/vec2 nx (+ niy minus-v-edge))
+
+             ;; open space
+             [_ _ _ _
+              _ _ _
+              _ _ _
+              _ _ _]
+             newpos)
+
+      ;; new tile collides. moving so fast got embedded in other tile. eject drastically!
       (cond
         (and vert? (or up? down?)) (vec2/vec2 nx (+ oiy (if up? v-edge minus-v-edge)))
         (and horiz? (or left? right?)) (vec2/vec2 (+ oix (if left? h-edge minus-h-edge)) ny)
