@@ -75,7 +75,7 @@
   (nth (tile-map y) x))
 
 (defn not-passable? [x y]
-  (#{"T" "-" "B" "O"} (get-tile-at x y)))
+  (#{"T" "-" "B" "O" "X"} (get-tile-at x y)))
 
 (def passable? (comp not not-passable?))
 
