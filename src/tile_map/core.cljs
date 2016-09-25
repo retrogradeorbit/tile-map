@@ -200,7 +200,8 @@
                 joy (vec2/vec2 (or (gp/axis 0) 0)
                                (or (gp/axis 1) 0))
                 ]
-                                        ;(s/set-texture! player (if (zero? (mod (int (/ fnum 10)) 2)) stand walk))
+
+            (s/set-texture! player (if (zero? (mod (int (/ fnum 10)) 2)) stand walk))
 
             (set-player player (int x) (int y) px py)
 
@@ -210,7 +211,8 @@
                         (+ -2000 (mod (int (* y 0.90)) ( * 4 32))))
 
             (<! (e/next-frame))
-            (recur pos
+            (recur (-> ppos
+                       (vec2/scale (* -2 32)))
                    (inc fnum)
                    (-> joy
                        (vec2/scale 0.1)
