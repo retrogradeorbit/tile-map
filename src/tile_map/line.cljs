@@ -130,57 +130,185 @@
 (def from-zero-quadrant to-zero-quadrant)
 
 (defn all-covered [x0 y0 x1 y1]
-  (log "a-cov" x0 y0 x1 y1)
-  (let [quadrant (quadrant-of-angle x0 y0 x1 y1)
-        [x0 y0] (to-zero-quadrant quadrant x0 y0)
-        [x1 y1] (to-zero-quadrant quadrant x1 y1)]
-    (loop [x (int x0) y (int y0) s [(from-zero-quadrant quadrant (int x0) (int y0))]]
-      (log "AC" x y (str s))
-      (if (and (= x (int x1)) (= y (int y1)))
-        s
+  (let [
+        dx (- x1 x0)
+        dy (- y1 y0)
 
-        (let [bottom-x (intersect-x x0 y0 x1 y1 (inc y))
-              right-y (intersect-y x0 y0 x1 y1 (inc x))
-              ]
-          (log "=>" x bottom-x (inc x) y right-y (inc y))
-          (cond (<= x bottom-x (inc x))
-                ;; cuts bottom
-                (recur x (inc y)
-                       (conj s (from-zero-quadrant quadrant x (inc y))))
+        down? (pos? dy)
+        up? (neg? dy)
+        horiz? (zero? dy)
 
-                ;; cuts right
-                (<= y right-y (inc y))
-                (recur (inc x) y
-                       (conj s (from-zero-quadrant quadrant (inc x) y)))
-
-                (and (= bottom-x (inc x))
-                     (= right-y (inc y)))
-                (recur (inc x) (inc y)
-                       (conj s
-                             (from-zero-quadrant quadrant x (inc y))
-                             (from-zero-quadrant quadrant (inc x) y)
-                             (from-zero-quadrant quadrant (inc x) (inc y))))
-
-                :default :foo
-                )
+        right? (pos? dx)
+        left? (neg? dx)
+        vert? (zero? dx)
 
 
-          )))
-    )
-  )
+        ]
+    (cond
+      (and right? down?)
+      (loop [x (int x0)
+             y (int y0)
+             s [[x y]]]
+        (if (and (= x (Math/floor x1)) (= y (Math/floor y1)))
+          s
 
-(log (str (all-covered 6.7 4.6 7.002179031074047 4.591119113750755)))
+          (let [bottom-x (intersect-x x0 y0 x1 y1 (inc y))
+                right-y (intersect-y x0 y0 x1 y1 (inc x))
+                ]
+            (cond (<= x bottom-x (inc x))
+                  ;; cuts bottom
+                  (recur x (inc y)
+                         (conj s [x (inc y)]))
+
+                  ;; cuts right
+                  (<= y right-y (inc y))
+                  (recur (inc x) y
+                         (conj s [(inc x) y]))
+
+                  (and (= bottom-x (inc x))
+                       (= right-y (inc y)))
+                  (recur (inc x) (inc y)
+                         (conj s
+                               [x (inc y)]
+                               [(inc x) y]
+                               [(inc x) (inc y)]))
+
+                  :default :down-right))))
+
+      (and right? up?)
+      (loop [x (int x0)
+             y (int y0)
+             s [[x y]]]
+        (if (and (= x (Math/floor x1)) (= y (Math/floor y1)))
+          s
+
+          (let [top-x (intersect-x x0 y0 x1 y1 y)
+                right-y (intersect-y x0 y0 x1 y1 (inc x))
+                ]
+             (cond (<= x top-x (inc x))
+                  ;; cuts top
+                  (recur x (dec y)
+                         (conj s [x (dec y)]))
+
+                  ;; cuts right
+                  (<= y right-y (inc y))
+                  (recur (inc x) y
+                         (conj s [(inc x) y]))
+
+                  (and (= top-x (inc x))
+                       (= right-y (dec y)))
+                  (recur (inc x) (dec y)
+                         (conj s
+                               [x (dec y)]
+                               [(inc x) y]
+                               [(inc x) (dec y)]))
+
+                  :default :up-right
+                  ))))
+
+      (and left? down?)
+      (loop [x (int x0)
+             y (int y0)
+             s [[x y]]]
+        (if (and (= x (Math/floor x1)) (= y (Math/floor y1)))
+          s
+
+          (let [bottom-x (intersect-x x0 y0 x1 y1 (inc y))
+                left-y (intersect-y x0 y0 x1 y1 x)
+                ]
+            (cond (<= x bottom-x (inc x))
+                  ;; cuts bottom
+                  (recur x (inc y)
+                         (conj s [x (inc y)]))
+
+                  ;; cuts left
+                  (<= y left-y (inc y))
+                  (recur (dec x) y
+                         (conj s [(dec x) y]))
+
+                  (and (= bottom-x (dec x))
+                       (= left-y (inc y)))
+                  (recur (dec x) (inc y)
+                         (conj s
+                               [x (inc y)]
+                               [(dec x) y]
+                               [(dec x) (inc y)]))
+
+                  :default :down-right))))
+
+      (and left? up?)
+      (loop [x (int x0)
+             y (int y0)
+             s [[x y]]]
+        (if (and (= x (Math/floor x1)) (= y (Math/floor y1)))
+          s
+
+          (let [top-x (intersect-x x0 y0 x1 y1 y)
+                left-y (intersect-y x0 y0 x1 y1 x)
+                ]
+            (cond (<= x top-x (inc x))
+                  ;; cuts top
+                  (recur x (dec y)
+                         (conj s [x (dec y)]))
+
+                  ;; cuts left
+                  (<= y left-y (inc y))
+                  (recur (dec x) y
+                         (conj s [(dec x) y]))
+
+                  (and (= top-x (dec x))
+                       (= left-y (dec y)))
+                  (recur (dec x) (dec y)
+                         (conj s
+                               [x (dec y)]
+                               [(dec x) y]
+                               [(dec x) (dec y)]))
+
+                  :default :up-right
+                  ))))
 
 
 
+      right?
+      (loop [x (int x0)
+             y (int y0)
+             s [[x y]]]
+        (if (= x (Math/floor x1))
+          s
+          (let [right-y (intersect-y x0 y0 x1 y1 (inc x))]
+            (assert (<= y right-y (inc y)) "intersection out of range")
+            (recur (inc x) y
+                   (conj s [(inc x) y])))))
 
+      left?
+      (loop [x (int x0)
+             y (int y0)
+             s [[x y]]]
+        (if (= x (Math/floor x1))
+          s
+          (let [left-y (intersect-y x0 y0 x1 y1 x)]
+            (assert (<= y left-y (inc y)) "intersection out of range")
+            (recur (dec x) y
+                   (conj s [(dec x) y])))))
 
+      up?
+      (loop [x (int x0)
+             y (int y0)
+             s [[x y]]]
+        (if (= y (Math/floor y1))
+          s
+          (let [top-x (intersect-x x0 y0 x1 y1 y)]
+            (assert (<= x top-x (inc x)) "intersection out of range")
+            (recur x (dec y)
+                   (conj s [x (dec y)])))))
 
-#_ (let [[x0 y0 x1 y1] [0 0 3 9]]
-  #_ (log (str (bresenham x0 y0 x1 y1)))
-  #_ (log (str (octant-of x0 y0 x1 y1)))
-  #_ (log (str (intify (cover-all (bresenham x0 y0 x1 y1)))))
-
-  (log (str (intersect-x 1.9 0.5 2.5 2.3 2))
-       (str (intersect-y 1.9 0.5 2.5 2.3 2)))
-)
+      down?
+      (loop [x (int x0)
+             y (int y0)
+             s [[x y]]]
+        (if (= y (Math/floor y1))
+          s
+          (let [bottom-x (intersect-x x0 y0 x1 y1 (inc y))]
+            (assert (<= x bottom-x (inc x)) "intersection out of range")
+            (recur x (inc y)
+                   (conj s [x (inc y)]))))))))
