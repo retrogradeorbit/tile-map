@@ -280,12 +280,10 @@
         left? (neg? dx)
         vert? (zero? dx)
         ]
-    (log left? right? up? down?)
     (cond
       (and right? down?)
       (let [top-x (line/intersect-x ox oy nx ny y)
             left-y (line/intersect-y ox oy nx ny x)]
-        (log top-x left-y)
         (cond (< x top-x (inc x))
           ;; cuts top
           (vec2/vec2 top-x y)
@@ -308,7 +306,6 @@
       (and right? up?)
       (let [bottom-x (line/intersect-x ox oy nx ny (inc y))
             left-y (line/intersect-y ox oy nx ny x)]
-        (log bottom-x left-y)
         (cond (< x bottom-x (inc x))
           ;; cuts bottom
           (vec2/vec2 bottom-x (inc y))
@@ -356,20 +353,10 @@
   )
 
 (defn reject [oldpos newpos x y]
-  (log "op" oldpos "np" newpos "x" x "y" y)
-  (let [newpos (intersect oldpos newpos x y)]
-    (log "NP" newpos)
-    (-> (vec2/sub newpos oldpos)
+   (let [newpos (intersect oldpos newpos x y)]
+     (-> (vec2/sub newpos oldpos)
         (vec2/scale 0.999)
         (vec2/add oldpos))))
-
-
-(log
- #_ (reject (vec2/vec2 1.9 0.5) (vec2/vec2 2.5 2.3) 1 0)
- #_ (intersect (vec2/vec2 20.22 5.4) (vec2/vec2 30.49 4.86) 30 4)
- ;(intersect (vec2/vec2 20.68 9) (vec2/vec2 20.93 9) 20 9)
- (str (line/all-covered 6 9 6 11))
-)
 
 
 (defn constrain [newpos oldpos]
@@ -393,50 +380,28 @@
       ;; small +/- 1 tile movements
       (if (passable? nix niy)
         ;; in an open square. apply edge contsraints
-        (do (log "open passable")
-            (apply-edge-constraints oldpos newpos))
+        (apply-edge-constraints oldpos newpos)
 
         ;; new tile collides. moving so fast got embedded in other tile. eject drastically!
-        (do (log "small movement not passable" ox oy nx ny )
-            (let [points (line/all-covered ox oy nx ny)]
-              (log "small" dx dy  oix oiy nix niy (str points))
-              (loop [[[x y] & r] points]
-                (log [x y] (passable? x y))
-                (if (passable? x y)
-                  (if (zero? (count r))
-                    ;; no colision found
-                    newpos
+        (let [points (line/all-covered ox oy nx ny)]
+          (loop [[[x y] & r] points]
+            (if (passable? x y)
+              (if (zero? (count r))
+                ;; no colision found
+                newpos
 
-                    ;; try next point
-                    (recur r))
+                ;; try next point
+                (recur r))
 
-                  ;; not passable! reject from this tile
-                  (let [np (reject oldpos newpos x y)]
-                    (log "np---->" np)
-                    (apply-edge-constraints oldpos np)))))
-
-            #_            (let [np (reject oldpos newpos nix niy)]
-                            (log "np is" (str np))
-                            (apply-edge-constraints
-                             oldpos np
-
-
-
-                             ;; (cond
-                             ;;   (and vert? (or up? down?)) (vec2/vec2 nx (+ oiy (if up? v-edge minus-v-edge)))
-                             ;;   (and horiz? (or left? right?)) (vec2/vec2 (+ oix (if left? h-edge minus-h-edge)) ny)
-                             ;;   (passable? nix oiy) (vec2/vec2 nx (+ oiy (if up? v-edge minus-v-edge)))
-                             ;;   (passable? oix niy) (vec2/vec2 (+ oix (if left? h-edge minus-h-edge)) ny)
-                             ;;   :default oldpos)
-                             ))))
+              ;; not passable! reject from this tile
+              (let [np (reject oldpos newpos x y)]
+                (apply-edge-constraints oldpos np))))))
 
       ;; large >=2 tile movements
       ;; walk from start to finish tile. check each one for passability
       ;; when you find the first unpassable one, eject drastically from this tile
-      (let [points (line/all-covered oix oiy nix niy)]
-        (log "LARGE JUMP" dx dy  oix oiy nix niy (str points))
+      (let [points (line/all-covered ox oy nx ny)]
         (loop [[[x y] & r] points]
-          (log [x y] (passable? x y))
           (if (passable? x y)
             (if (zero? (count r))
               ;; no colision found
@@ -447,7 +412,6 @@
 
             ;; not passable! reject from this tile
             (let [np (reject oldpos newpos x y)]
-              (log "np---->" np)
               (apply-edge-constraints oldpos np))))))))
 
 (defonce main
