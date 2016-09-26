@@ -373,33 +373,15 @@
         left? (neg? dx)
         vert? (zero? dx)
         ]
-    (when (gp/button-pressed? 0 :x)
-      (log oix oiy))
-
-    (if (and (> 2 (Math/abs dx)) (> 2 (Math/abs dy)))
+    (if (and (> 2 (Math/abs dx))
+             (> 2 (Math/abs dy))
+             (passable? nix niy))
       ;; small +/- 1 tile movements
-      (if (passable? nix niy)
-        ;; in an open square. apply edge contsraints
-        (apply-edge-constraints oldpos newpos)
+      ;; in an open square. apply edge contsraints
+      (apply-edge-constraints oldpos newpos)
 
-        ;; new tile collides. moving so fast got embedded in other tile. eject drastically!
-        (let [points (line/all-covered ox oy nx ny)]
-          (loop [[[x y] & r] points]
-            (if (passable? x y)
-              (if (zero? (count r))
-                ;; no colision found
-                newpos
-
-                ;; try next point
-                (recur r))
-
-              ;; not passable! reject from this tile
-              (let [np (reject oldpos newpos x y)]
-                (apply-edge-constraints oldpos np))))))
-
-      ;; large >=2 tile movements
-      ;; walk from start to finish tile. check each one for passability
-      ;; when you find the first unpassable one, eject drastically from this tile
+      ;; new tile collides. moving so fast got embedded in other tile.
+      ;; eject drastically!
       (let [points (line/all-covered ox oy nx ny)]
         (loop [[[x y] & r] points]
           (if (passable? x y)
