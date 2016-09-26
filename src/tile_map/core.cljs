@@ -423,7 +423,10 @@
          player (s/make-sprite stand :scale 4)]
         (loop [pos (vec2/vec2 -500 -400) fnum 0
                ppos (vec2/vec2 1.5 4.5)]
-          (let [x (vec2/get-x pos) ;; (+ -2000 (* 1000 (Math/sin theta)))
+          (let [
+                pos (-> ppos
+                       (vec2/scale (* -2 32)))
+                x (vec2/get-x pos) ;; (+ -2000 (* 1000 (Math/sin theta)))
                 y (vec2/get-y pos) ;; (+ -1000 (* 500 (Math/cos theta)))
 
                 px (vec2/get-x ppos)
