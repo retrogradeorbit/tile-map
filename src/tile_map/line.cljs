@@ -1,6 +1,8 @@
 (ns tile-map.line
   (:require [infinitelives.utils.console :refer [log]]
-            [infinitelives.utils.vec2 :as vec2]))
+            [infinitelives.utils.vec2 :as vec2]
+            [cljs.core.match :refer-macros [match]]
+))
 
 
 (defn octant-of [x0 y0 x1 y1]
@@ -157,26 +159,16 @@
                  (conj s [(dx-fn x) (dy-fn y)])))))))
 
 (defn all-covered [x0 y0 x1 y1]
-  (let [dx (- x1 x0)
-        dy (- y1 y0)
+  (match [(Math/sign (- x1 x0)) (Math/sign (- y1 y0))]
 
-        down? (pos? dy)
-        up? (neg? dy)
-        horiz? (zero? dy)
+         ;; diagonals
+         [1 1] (cell-coverage x0 y0 x1 y1 inc inc inc inc)
+         [1 -1] (cell-coverage x0 y0 x1 y1 inc identity dec inc)
+         [-1 1] (cell-coverage x0 y0 x1 y1 identity inc inc dec)
+         [-1 -1] (cell-coverage x0 y0 x1 y1 identity identity dec dec)
 
-        right? (pos? dx)
-        left? (neg? dx)
-        vert? (zero? dx)]
-    (cond
-      ;; diagonals
-      (and right? down?) (cell-coverage x0 y0 x1 y1 inc inc inc inc)
-      (and right? up?) (cell-coverage x0 y0 x1 y1 inc identity dec inc)
-      (and left? down?) (cell-coverage x0 y0 x1 y1 identity inc inc dec)
-      (and left? up?) (cell-coverage x0 y0 x1 y1 identity identity dec dec)
-
-      ;; compass directions
-      right? (cell-coverage-line x0 y0 x1 y1 true false inc identity)
-      left? (cell-coverage-line x0 y0 x1 y1 true false dec identity)
-      up? (cell-coverage-line x0 y0 x1 y1 false true identity dec)
-      down? (cell-coverage-line x0 y0 x1 y1 false true identity inc)
-)))
+         ;; compass directions
+         [1 _] (cell-coverage-line x0 y0 x1 y1 true false inc identity)
+         [-1 _] (cell-coverage-line x0 y0 x1 y1 true false dec identity)
+         [_ -1] (cell-coverage-line x0 y0 x1 y1 false true identity dec)
+         [_ 1] (cell-coverage-line x0 y0 x1 y1 false true identity inc)))

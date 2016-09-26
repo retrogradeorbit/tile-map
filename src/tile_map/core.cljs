@@ -247,6 +247,26 @@
             _ _ _]
            newpos)))
 
+(defn intersect-diag [x0 y0 x1 y1 x y x-fn y-fn]
+  (let [top-x (line/intersect-x x0 y0 x1 y1 (y-fn y))
+        left-y (line/intersect-y x0 y0 x1 y1 (x-fn x))]
+    (cond (< x top-x (inc x))
+          ;; cuts top
+          (vec2/vec2 top-x (y-fn y))
+
+          ;; cuts left
+          (< y left-y (inc y))
+          (vec2/vec2 (x-fn x) left-y))))
+
+(defn intersect-compass [x0 y0 x1 y1 x y xtest ytest x-fn y-fn]
+  (cond
+    xtest (let [right-y (line/intersect-y x0 y0 x1 y1 (x-fn x))]
+            (when (< y right-y (inc y))
+              (vec2/vec2 (x-fn x) right-y)))
+    ytest (let [bottom-x (line/intersect-x x0 y0 x1 y1 (y-fn y))]
+        (when (< x bottom-x (inc x))
+          (vec2/vec2 bottom-x (y-fn y))))))
+
 (defn intersect [oldpos newpos x y]
   (let [[nx ny nix niy nfx nfy] (vec2->parts newpos)
         [ox oy oix oiy ofx ofy] (vec2->parts oldpos)
@@ -259,69 +279,15 @@
         right? (pos? dx)
         left? (neg? dx)]
     (cond
-      (and right? down?)
-      (let [top-x (line/intersect-x ox oy nx ny y)
-            left-y (line/intersect-y ox oy nx ny x)]
-        (cond (< x top-x (inc x))
-          ;; cuts top
-          (vec2/vec2 top-x y)
+      (and right? down?) (intersect-diag ox oy nx ny x y identity identity)
+      (and left? down?) (intersect-diag ox oy nx ny x y inc identity)
+      (and right? up?) (intersect-diag ox oy nx ny x y identity inc)
+      (and left? up?) (intersect-diag ox oy nx ny x y inc inc)
 
-          ;; cuts left
-          (< y left-y (inc y))
-          (vec2/vec2 x left-y)))
-
-      (and left? down?)
-      (let [top-x (line/intersect-x ox oy nx ny y)
-            right-y (line/intersect-y ox oy nx ny (inc x))]
-        (cond (< x top-x (inc x))
-          ;; cuts top
-          (vec2/vec2 top-x y)
-
-          ;; cuts right
-          (< y right-y (inc y))
-          (vec2/vec2 (inc x) right-y)))
-
-      (and right? up?)
-      (let [bottom-x (line/intersect-x ox oy nx ny (inc y))
-            left-y (line/intersect-y ox oy nx ny x)]
-        (cond (< x bottom-x (inc x))
-          ;; cuts bottom
-          (vec2/vec2 bottom-x (inc y))
-
-          ;; cuts left
-          (< y left-y (inc y))
-          (vec2/vec2 x left-y)))
-
-      (and left? up?)
-      (let [bottom-x (line/intersect-x ox oy nx ny (inc y))
-            right-y (line/intersect-y ox oy nx ny (inc x))]
-        (cond (< x bottom-x (inc x))
-          ;; cuts bottom
-          (vec2/vec2 bottom-x (inc y))
-
-          ;; cuts right
-          (< y right-y (inc y))
-          (vec2/vec2 (inc x) right-y)))
-
-      left?
-      (let [right-y (line/intersect-y ox oy nx ny (inc x))]
-        (when (< y right-y (inc y))
-          (vec2/vec2 (inc x) right-y)))
-
-      right?
-      (let [left-y (line/intersect-y ox oy nx ny x)]
-        (when (< y left-y (inc y))
-          (vec2/vec2 x left-y)))
-
-      up?
-      (let [bottom-x (line/intersect-x ox oy nx ny (inc y))]
-        (when (< x bottom-x (inc x))
-          (vec2/vec2 bottom-x (inc y))))
-
-      down?
-      (let [top-x (line/intersect-x ox oy nx ny y)]
-        (when (< x top-x (inc x))
-          (vec2/vec2 top-x y))))))
+      left? (intersect-compass ox oy nx ny x y true false inc identity)
+      right? (intersect-compass ox oy nx ny x y true false identity identity)
+      up? (intersect-compass ox oy nx ny x y false true identity inc)
+      down? (intersect-compass ox oy nx ny x y false true identity identity))))
 
 (defn reject [oldpos newpos x y]
    (let [newpos (intersect oldpos newpos x y)]
