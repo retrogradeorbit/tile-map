@@ -265,6 +265,113 @@
            newpos))
   )
 
+(defn intersect [oldpos newpos x y]
+  (let [[nx ny nix niy nfx nfy] (vec2->parts newpos)
+        [ox oy oix oiy ofx ofy] (vec2->parts oldpos)
+
+        dx (- nx ox)
+        dy (- ny oy)
+
+        down? (pos? dy)
+        up? (neg? dy)
+        horiz? (zero? dy)
+
+        right? (pos? dx)
+        left? (neg? dx)
+        vert? (zero? dx)
+        ]
+    (log left? right? up? down?)
+    (cond
+      (and right? down?)
+      (let [top-x (line/intersect-x ox oy nx ny y)
+            left-y (line/intersect-y ox oy nx ny x)]
+        (log top-x left-y)
+        (cond (< x top-x (inc x))
+          ;; cuts top
+          (vec2/vec2 top-x y)
+
+          ;; cuts left
+          (< y left-y (inc y))
+          (vec2/vec2 x left-y)))
+
+      (and left? down?)
+      (let [top-x (line/intersect-x ox oy nx ny y)
+            right-y (line/intersect-y ox oy nx ny (inc x))]
+        (cond (< x top-x (inc x))
+          ;; cuts top
+          (vec2/vec2 top-x y)
+
+          ;; cuts right
+          (< y right-y (inc y))
+          (vec2/vec2 (inc x) right-y)))
+
+      (and right? up?)
+      (let [bottom-x (line/intersect-x ox oy nx ny (inc y))
+            left-y (line/intersect-y ox oy nx ny x)]
+        (log bottom-x left-y)
+        (cond (< x bottom-x (inc x))
+          ;; cuts bottom
+          (vec2/vec2 bottom-x (inc y))
+
+          ;; cuts left
+          (< y left-y (inc y))
+          (vec2/vec2 x left-y)))
+
+      (and left? up?)
+      (let [bottom-x (line/intersect-x ox oy nx ny (inc y))
+            right-y (line/intersect-y ox oy nx ny (inc x))]
+        (cond (< x bottom-x (inc x))
+          ;; cuts bottom
+          (vec2/vec2 bottom-x (inc y))
+
+          ;; cuts right
+          (< y right-y (inc y))
+          (vec2/vec2 (inc x) right-y)))
+
+      left?
+      (let [right-y (line/intersect-y ox oy nx ny (inc x))]
+        (when (< y right-y (inc y))
+          (vec2/vec2 (inc x) right-y)))
+
+      right?
+      (let [left-y (line/intersect-y ox oy nx ny x)]
+        (when (< y left-y (inc y))
+          (vec2/vec2 x left-y)))
+
+      up?
+      (let [bottom-x (line/intersect-x ox oy nx ny (inc y))]
+        (when (< x bottom-x (inc x))
+          (vec2/vec2 bottom-x (inc y))))
+
+      down?
+      (let [top-x (line/intersect-x ox oy nx ny y)]
+        (when (< x top-x (inc x))
+          (vec2/vec2 top-x y)))
+
+      :default :foo
+      )
+
+
+    )
+  )
+
+(defn reject [oldpos newpos x y]
+  (log "op" oldpos "np" newpos "x" x "y" y)
+  (let [newpos (intersect oldpos newpos x y)]
+    (log "NP" newpos)
+    (-> (vec2/sub newpos oldpos)
+        (vec2/scale 0.999)
+        (vec2/add oldpos))))
+
+
+(log
+ #_ (reject (vec2/vec2 1.9 0.5) (vec2/vec2 2.5 2.3) 1 0)
+ #_ (intersect (vec2/vec2 20.22 5.4) (vec2/vec2 30.49 4.86) 30 4)
+ ;(intersect (vec2/vec2 20.68 9) (vec2/vec2 20.93 9) 20 9)
+ (str (line/all-covered 6 9 6 11))
+)
+
+
 (defn constrain [newpos oldpos]
   (let [[nx ny nix niy nfx nfy] (vec2->parts newpos)
         [ox oy oix oiy ofx ofy] (vec2->parts oldpos)
@@ -279,27 +386,55 @@
         left? (neg? dx)
         vert? (zero? dx)
         ]
+    (when (gp/button-pressed? 0 :x)
+      (log oix oiy))
+
     (if (and (> 2 (Math/abs dx)) (> 2 (Math/abs dy)))
       ;; small +/- 1 tile movements
       (if (passable? nix niy)
         ;; in an open square. apply edge contsraints
-        (apply-edge-constraints oldpos newpos)
+        (do (log "open passable")
+            (apply-edge-constraints oldpos newpos))
 
         ;; new tile collides. moving so fast got embedded in other tile. eject drastically!
-        (apply-edge-constraints
-         oldpos
-         (cond
-           (and vert? (or up? down?)) (vec2/vec2 nx (+ oiy (if up? v-edge minus-v-edge)))
-           (and horiz? (or left? right?)) (vec2/vec2 (+ oix (if left? h-edge minus-h-edge)) ny)
-           (passable? nix oiy) (vec2/vec2 nx (+ oiy (if up? v-edge minus-v-edge)))
-           (passable? oix niy) (vec2/vec2 (+ oix (if left? h-edge minus-h-edge)) ny)
-           :default oldpos)))
+        (do (log "small movement not passable" ox oy nx ny )
+            (let [points (line/all-covered ox oy nx ny)]
+              (log "small" dx dy  oix oiy nix niy (str points))
+              (loop [[[x y] & r] points]
+                (log [x y] (passable? x y))
+                (if (passable? x y)
+                  (if (zero? (count r))
+                    ;; no colision found
+                    newpos
+
+                    ;; try next point
+                    (recur r))
+
+                  ;; not passable! reject from this tile
+                  (let [np (reject oldpos newpos x y)]
+                    (log "np---->" np)
+                    (apply-edge-constraints oldpos np)))))
+
+            #_            (let [np (reject oldpos newpos nix niy)]
+                            (log "np is" (str np))
+                            (apply-edge-constraints
+                             oldpos np
+
+
+
+                             ;; (cond
+                             ;;   (and vert? (or up? down?)) (vec2/vec2 nx (+ oiy (if up? v-edge minus-v-edge)))
+                             ;;   (and horiz? (or left? right?)) (vec2/vec2 (+ oix (if left? h-edge minus-h-edge)) ny)
+                             ;;   (passable? nix oiy) (vec2/vec2 nx (+ oiy (if up? v-edge minus-v-edge)))
+                             ;;   (passable? oix niy) (vec2/vec2 (+ oix (if left? h-edge minus-h-edge)) ny)
+                             ;;   :default oldpos)
+                             ))))
 
       ;; large >=2 tile movements
       ;; walk from start to finish tile. check each one for passability
       ;; when you find the first unpassable one, eject drastically from this tile
-      (let [points (line/intify (line/bresenham oix oiy nix niy))]
-        (log "JUMP" dx dy)
+      (let [points (line/all-covered oix oiy nix niy)]
+        (log "LARGE JUMP" dx dy  oix oiy nix niy (str points))
         (loop [[[x y] & r] points]
           (log [x y] (passable? x y))
           (if (passable? x y)
@@ -311,14 +446,9 @@
               (recur r))
 
             ;; not passable! reject from this tile
-            (apply-edge-constraints
-             oldpos
-             (cond
-               (and vert? (or up? down?)) (vec2/vec2 nx (+ oiy (if up? v-edge minus-v-edge)))
-               (and horiz? (or left? right?)) (vec2/vec2 (+ oix (if left? h-edge minus-h-edge)) ny)
-               (passable? x oiy) (vec2/vec2 nx (+ oiy (if up? v-edge minus-v-edge)))
-               (passable? oix y) (vec2/vec2 (+ oix (if left? h-edge minus-h-edge)) ny)
-               :default oldpos))))))))
+            (let [np (reject oldpos newpos x y)]
+              (log "np---->" np)
+              (apply-edge-constraints oldpos np))))))))
 
 (defonce main
   (go
