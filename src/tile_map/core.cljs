@@ -274,12 +274,8 @@
 
         down? (pos? dy)
         up? (neg? dy)
-        horiz? (zero? dy)
-
         right? (pos? dx)
-        left? (neg? dx)
-        vert? (zero? dx)
-        ]
+        left? (neg? dx)]
     (cond
       (and right? down?)
       (let [top-x (line/intersect-x ox oy nx ny y)
@@ -343,14 +339,7 @@
       down?
       (let [top-x (line/intersect-x ox oy nx ny y)]
         (when (< x top-x (inc x))
-          (vec2/vec2 top-x y)))
-
-      :default :foo
-      )
-
-
-    )
-  )
+          (vec2/vec2 top-x y))))))
 
 (defn reject [oldpos newpos x y]
    (let [newpos (intersect oldpos newpos x y)]
