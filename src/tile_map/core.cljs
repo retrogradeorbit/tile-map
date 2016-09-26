@@ -125,14 +125,6 @@
         dx (- nix oix)
         dy (- niy oiy)
 
-        down? (pos? dy)
-        up? (neg? dy)
-        horiz? (zero? dy)
-
-        right? (pos? dx)
-        left? (neg? dx)
-        vert? (zero? dx)
-
         <left-edge (< nfx h-edge)
         >right-edge (> nfx minus-h-edge)
         <top-edge (< nfy v-edge)
@@ -146,16 +138,7 @@
         pass-top-left? (passable? (dec nix) (dec niy))
         pass-bottom-left? (passable? (dec nix) (inc niy))
         pass-top-right? (passable? (inc nix) (dec niy))
-        pass-bottom-right? (passable? (inc nix) (inc niy))
-
-        not-pass-left? (not pass-left?)
-        not-pass-right? (not pass-right?)
-        not-pass-top? (not pass-top?)
-        not-pass-bottom? (not pass-bottom?)
-        not-pass-top-left? (not pass-top-left?)
-        not-pass-bottom-left? (not pass-bottom-left?)
-        not-pass-top-right? (not pass-top-right?)
-        not-pass-bottom-right? (not pass-bottom-right?)]
+        pass-bottom-right? (passable? (inc nix) (inc niy))]
     (match [<left-edge >right-edge <top-edge >bottom-edge
             pass-top-left? pass-top? pass-top-right?
             pass-left? pass? pass-right?
