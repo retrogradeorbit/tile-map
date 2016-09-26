@@ -245,8 +245,7 @@
             _ _ _
             _ _ _
             _ _ _]
-           newpos))
-  )
+           newpos)))
 
 (defn intersect [oldpos newpos x y]
   (let [[nx ny nix niy nfx nfy] (vec2->parts newpos)
