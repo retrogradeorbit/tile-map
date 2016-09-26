@@ -105,33 +105,41 @@
         (/ (- y1 y0)
            (- x1 x0)))))
 
-(defn quadrant-of-angle [x0 y0 x1 y1]
-  (cond
-    (and (< x0 x1) (< y0 y1))
-    0
+(defn cell-coverage [x0 y0 x1 y1
+                    x-fn y-fn
+                    dy-v-fn
+                    dx-h-fn]
+  (loop [x (int x0)
+         y (int y0)
+         s [[x y]]]
+    (if (and (= x (Math/floor x1)) (= y (Math/floor y1)))
+      s
 
-    (and (<= x1 x0) (< y0 y1))
-    1
+      (let [bottom-x (intersect-x x0 y0 x1 y1 (y-fn y))
+            right-y (intersect-y x0 y0 x1 y1 (x-fn x))
+            ]
+        (cond (<= x bottom-x (inc x))
+              ;; cuts bottom
+              (recur x (dy-v-fn y)
+                     (conj s [x (dy-v-fn y)]))
 
-    (and (<= x1 x0) (<= y1 y0))
-    2
+              ;; cuts right
+              (<= y right-y (inc y))
+              (recur (dx-h-fn x) y
+                     (conj s [(dx-h-fn x) y]))
 
-    (and (< x0 x1) (<= y1 y0))
-    3)
-  )
+              (and (= bottom-x (dx-h-fn x))
+                   (= right-y (dy-v-fn y)))
+              (recur (dx-h-fn x) (dy-v-fn y)
+                     (conj s
+                           [x (dy-v-fn y)]
+                           [(dx-h-fn x) y]
+                           [(dx-h-fn x) (dy-v-fn y)]))
 
-(defn to-zero-quadrant [quad x y]
-  (case quad
-    0 [x y]
-    1 [(- x) y]
-    2 [(- x) (- y)]
-    3 [x (- y)]))
-
-(def from-zero-quadrant to-zero-quadrant)
+              :default (assert false "!!"))))))
 
 (defn all-covered [x0 y0 x1 y1]
-  (let [
-        dx (- x1 x0)
+  (let [dx (- x1 x0)
         dy (- y1 y0)
 
         down? (pos? dy)
@@ -140,134 +148,23 @@
 
         right? (pos? dx)
         left? (neg? dx)
-        vert? (zero? dx)
-
-
-        ]
+        vert? (zero? dx)]
     (cond
       (and right? down?)
-      (loop [x (int x0)
-             y (int y0)
-             s [[x y]]]
-        (if (and (= x (Math/floor x1)) (= y (Math/floor y1)))
-          s
-
-          (let [bottom-x (intersect-x x0 y0 x1 y1 (inc y))
-                right-y (intersect-y x0 y0 x1 y1 (inc x))
-                ]
-            (cond (<= x bottom-x (inc x))
-                  ;; cuts bottom
-                  (recur x (inc y)
-                         (conj s [x (inc y)]))
-
-                  ;; cuts right
-                  (<= y right-y (inc y))
-                  (recur (inc x) y
-                         (conj s [(inc x) y]))
-
-                  (and (= bottom-x (inc x))
-                       (= right-y (inc y)))
-                  (recur (inc x) (inc y)
-                         (conj s
-                               [x (inc y)]
-                               [(inc x) y]
-                               [(inc x) (inc y)]))
-
-                  :default :down-right))))
+      (cell-coverage x0 y0 x1 y1
+                     inc inc inc inc)
 
       (and right? up?)
-      (loop [x (int x0)
-             y (int y0)
-             s [[x y]]]
-        (if (and (= x (Math/floor x1)) (= y (Math/floor y1)))
-          s
-
-          (let [top-x (intersect-x x0 y0 x1 y1 y)
-                right-y (intersect-y x0 y0 x1 y1 (inc x))
-                ]
-             (cond (<= x top-x (inc x))
-                  ;; cuts top
-                  (recur x (dec y)
-                         (conj s [x (dec y)]))
-
-                  ;; cuts right
-                  (<= y right-y (inc y))
-                  (recur (inc x) y
-                         (conj s [(inc x) y]))
-
-                  (and (= top-x (inc x))
-                       (= right-y (dec y)))
-                  (recur (inc x) (dec y)
-                         (conj s
-                               [x (dec y)]
-                               [(inc x) y]
-                               [(inc x) (dec y)]))
-
-                  :default :up-right
-                  ))))
+      (cell-coverage x0 y0 x1 y1
+                     inc identity dec inc)
 
       (and left? down?)
-      (loop [x (int x0)
-             y (int y0)
-             s [[x y]]]
-        (if (and (= x (Math/floor x1)) (= y (Math/floor y1)))
-          s
-
-          (let [bottom-x (intersect-x x0 y0 x1 y1 (inc y))
-                left-y (intersect-y x0 y0 x1 y1 x)
-                ]
-            (cond (<= x bottom-x (inc x))
-                  ;; cuts bottom
-                  (recur x (inc y)
-                         (conj s [x (inc y)]))
-
-                  ;; cuts left
-                  (<= y left-y (inc y))
-                  (recur (dec x) y
-                         (conj s [(dec x) y]))
-
-                  (and (= bottom-x (dec x))
-                       (= left-y (inc y)))
-                  (recur (dec x) (inc y)
-                         (conj s
-                               [x (inc y)]
-                               [(dec x) y]
-                               [(dec x) (inc y)]))
-
-                  :default :down-right))))
+      (cell-coverage x0 y0 x1 y1
+                     identity inc inc dec)
 
       (and left? up?)
-      (loop [x (int x0)
-             y (int y0)
-             s [[x y]]]
-        (if (and (= x (Math/floor x1)) (= y (Math/floor y1)))
-          s
-
-          (let [top-x (intersect-x x0 y0 x1 y1 y)
-                left-y (intersect-y x0 y0 x1 y1 x)
-                ]
-            (cond (<= x top-x (inc x))
-                  ;; cuts top
-                  (recur x (dec y)
-                         (conj s [x (dec y)]))
-
-                  ;; cuts left
-                  (<= y left-y (inc y))
-                  (recur (dec x) y
-                         (conj s [(dec x) y]))
-
-                  (and (= top-x (dec x))
-                       (= left-y (dec y)))
-                  (recur (dec x) (dec y)
-                         (conj s
-                               [x (dec y)]
-                               [(dec x) y]
-                               [(dec x) (dec y)]))
-
-                  :default :up-right
-                  ))))
-
-
+      (cell-coverage x0 y0 x1 y1
+                     identity identity dec dec)
 
       right?
       (loop [x (int x0)
