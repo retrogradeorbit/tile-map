@@ -363,16 +363,7 @@
   (let [[nx ny nix niy nfx nfy] (vec2->parts newpos)
         [ox oy oix oiy ofx ofy] (vec2->parts oldpos)
         dx (- nix oix)
-        dy (- niy oiy)
-
-        down? (pos? dy)
-        up? (neg? dy)
-        horiz? (zero? dy)
-
-        right? (pos? dx)
-        left? (neg? dx)
-        vert? (zero? dx)
-        ]
+        dy (- niy oiy)]
     (if (and (> 2 (Math/abs dx))
              (> 2 (Math/abs dy))
              (passable? nix niy))
