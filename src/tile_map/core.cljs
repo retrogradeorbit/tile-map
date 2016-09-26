@@ -188,19 +188,19 @@
            [true _ _ true
             _ _ _
             false true _
-            false false _]
+            _ false _]
            (vec2/vec2 (+ nix h-edge) (+ niy minus-v-edge))
 
            ;; inner top left
            [true _ true _
-            false false _
+            _ false _
             false true _
             _ _ _]
            (vec2/vec2 (+ nix h-edge) (+ niy v-edge))
 
            ;; inner top right
            [_ true true _
-            _ false false
+            _ false _
             _ true false
             _ _ _]
            (vec2/vec2 (+ nix minus-h-edge) (+ niy v-edge))
@@ -209,7 +209,7 @@
            [_ true _ true
             _ _ _
             _ true false
-            _ false false]
+            _ false _]
            (vec2/vec2 (+ nix minus-h-edge) (+ niy minus-v-edge))
 
            ;; right edge
