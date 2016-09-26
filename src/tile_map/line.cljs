@@ -109,9 +109,7 @@
                      x-fn y-fn
                      dy-v-fn
                      dx-h-fn]
-  (loop [x (int x0)
-         y (int y0)
-         s [[x y]]]
+  (loop [x (int x0) y (int y0) s [[x y]]]
     (if (and (= x (Math/floor x1)) (= y (Math/floor y1)))
       s
       (let [top-bottom-x (intersect-x x0 y0 x1 y1 (y-fn y))
@@ -138,6 +136,26 @@
 
           :default (assert false "cell-coverage fatal error!"))))))
 
+(defn cell-coverage-line [x0 y0 x1 y1 xtest ytest dx-fn dy-fn]
+  (loop [x (int x0)
+         y (int y0)
+         s [[x y]]]
+    (if (or (and xtest (= x (Math/floor x1)))
+            (and ytest (= y (Math/floor y1))))
+      s
+      (cond
+        xtest
+        (let [right-y (intersect-y x0 y0 x1 y1 (inc x))]
+          (assert (<= y right-y (inc y)) "intersection out of range")
+          (recur (dx-fn x) (dy-fn y)
+                 (conj s [(dx-fn x) (dy-fn y)])))
+
+        ytest
+        (let [top-x (intersect-x x0 y0 x1 y1 (inc y))]
+          (assert (<= x top-x (inc x)) "intersection out of range")
+          (recur (dx-fn x) (dy-fn y)
+                 (conj s [(dx-fn x) (dy-fn y)])))))))
+
 (defn all-covered [x0 y0 x1 y1]
   (let [dx (- x1 x0)
         dy (- y1 y0)
@@ -150,62 +168,15 @@
         left? (neg? dx)
         vert? (zero? dx)]
     (cond
-      (and right? down?)
-      (cell-coverage x0 y0 x1 y1
-                     inc inc inc inc)
+      ;; diagonals
+      (and right? down?) (cell-coverage x0 y0 x1 y1 inc inc inc inc)
+      (and right? up?) (cell-coverage x0 y0 x1 y1 inc identity dec inc)
+      (and left? down?) (cell-coverage x0 y0 x1 y1 identity inc inc dec)
+      (and left? up?) (cell-coverage x0 y0 x1 y1 identity identity dec dec)
 
-      (and right? up?)
-      (cell-coverage x0 y0 x1 y1
-                     inc identity dec inc)
-
-      (and left? down?)
-      (cell-coverage x0 y0 x1 y1
-                     identity inc inc dec)
-
-      (and left? up?)
-      (cell-coverage x0 y0 x1 y1
-                     identity identity dec dec)
-
-      right?
-      (loop [x (int x0)
-             y (int y0)
-             s [[x y]]]
-        (if (= x (Math/floor x1))
-          s
-          (let [right-y (intersect-y x0 y0 x1 y1 (inc x))]
-            (assert (<= y right-y (inc y)) "intersection out of range")
-            (recur (inc x) y
-                   (conj s [(inc x) y])))))
-
-      left?
-      (loop [x (int x0)
-             y (int y0)
-             s [[x y]]]
-        (if (= x (Math/floor x1))
-          s
-          (let [left-y (intersect-y x0 y0 x1 y1 x)]
-            (assert (<= y left-y (inc y)) "intersection out of range")
-            (recur (dec x) y
-                   (conj s [(dec x) y])))))
-
-      up?
-      (loop [x (int x0)
-             y (int y0)
-             s [[x y]]]
-        (if (= y (Math/floor y1))
-          s
-          (let [top-x (intersect-x x0 y0 x1 y1 y)]
-            (assert (<= x top-x (inc x)) "intersection out of range")
-            (recur x (dec y)
-                   (conj s [x (dec y)])))))
-
-      down?
-      (loop [x (int x0)
-             y (int y0)
-             s [[x y]]]
-        (if (= y (Math/floor y1))
-          s
-          (let [bottom-x (intersect-x x0 y0 x1 y1 (inc y))]
-            (assert (<= x bottom-x (inc x)) "intersection out of range")
-            (recur x (inc y)
-                   (conj s [x (inc y)]))))))))
+      ;; compass directions
+      right? (cell-coverage-line x0 y0 x1 y1 true false inc identity)
+      left? (cell-coverage-line x0 y0 x1 y1 true false dec identity)
+      up? (cell-coverage-line x0 y0 x1 y1 false true identity dec)
+      down? (cell-coverage-line x0 y0 x1 y1 false true identity inc)
+)))
