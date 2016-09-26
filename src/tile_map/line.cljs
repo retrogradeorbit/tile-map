@@ -106,37 +106,37 @@
            (- x1 x0)))))
 
 (defn cell-coverage [x0 y0 x1 y1
-                    x-fn y-fn
-                    dy-v-fn
-                    dx-h-fn]
+                     x-fn y-fn
+                     dy-v-fn
+                     dx-h-fn]
   (loop [x (int x0)
          y (int y0)
          s [[x y]]]
     (if (and (= x (Math/floor x1)) (= y (Math/floor y1)))
       s
+      (let [top-bottom-x (intersect-x x0 y0 x1 y1 (y-fn y))
+            left-right-y (intersect-y x0 y0 x1 y1 (x-fn x))]
+        (cond
+          ;; cuts top/bottom
+          (<= x top-bottom-x (inc x))
+          (recur x (dy-v-fn y)
+                 (conj s [x (dy-v-fn y)]))
 
-      (let [bottom-x (intersect-x x0 y0 x1 y1 (y-fn y))
-            right-y (intersect-y x0 y0 x1 y1 (x-fn x))
-            ]
-        (cond (<= x bottom-x (inc x))
-              ;; cuts bottom
-              (recur x (dy-v-fn y)
-                     (conj s [x (dy-v-fn y)]))
+          ;; cuts left/right
+          (<= y left-right-y (inc y))
+          (recur (dx-h-fn x) y
+                 (conj s [(dx-h-fn x) y]))
 
-              ;; cuts right
-              (<= y right-y (inc y))
-              (recur (dx-h-fn x) y
-                     (conj s [(dx-h-fn x) y]))
+          ;; cuts perfect diagonal
+          (and (= top-bottom-x (dx-h-fn x))
+               (= left-right-y (dy-v-fn y)))
+          (recur (dx-h-fn x) (dy-v-fn y)
+                 (conj s
+                       [x (dy-v-fn y)]
+                       [(dx-h-fn x) y]
+                       [(dx-h-fn x) (dy-v-fn y)]))
 
-              (and (= bottom-x (dx-h-fn x))
-                   (= right-y (dy-v-fn y)))
-              (recur (dx-h-fn x) (dy-v-fn y)
-                     (conj s
-                           [x (dy-v-fn y)]
-                           [(dx-h-fn x) y]
-                           [(dx-h-fn x) (dy-v-fn y)]))
-
-              :default (assert false "!!"))))))
+          :default (assert false "cell-coverage fatal error!"))))))
 
 (defn all-covered [x0 y0 x1 y1]
   (let [dx (- x1 x0)
