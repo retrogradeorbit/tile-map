@@ -384,8 +384,7 @@
               (recur r))
 
             ;; not passable! reject from this tile
-            (let [np (reject oldpos newpos x y)]
-              (apply-edge-constraints oldpos np))))))))
+            (apply-edge-constraints oldpos (reject oldpos newpos x y))))))))
 
 (defonce main
   (go
