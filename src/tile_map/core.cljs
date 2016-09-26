@@ -269,25 +269,16 @@
 
 (defn intersect [oldpos newpos x y]
   (let [[nx ny nix niy nfx nfy] (vec2->parts newpos)
-        [ox oy oix oiy ofx ofy] (vec2->parts oldpos)
-
-        dx (- nx ox)
-        dy (- ny oy)
-
-        down? (pos? dy)
-        up? (neg? dy)
-        right? (pos? dx)
-        left? (neg? dx)]
-    (cond
-      (and right? down?) (intersect-diag ox oy nx ny x y identity identity)
-      (and left? down?) (intersect-diag ox oy nx ny x y inc identity)
-      (and right? up?) (intersect-diag ox oy nx ny x y identity inc)
-      (and left? up?) (intersect-diag ox oy nx ny x y inc inc)
-
-      left? (intersect-compass ox oy nx ny x y true false inc identity)
-      right? (intersect-compass ox oy nx ny x y true false identity identity)
-      up? (intersect-compass ox oy nx ny x y false true identity inc)
-      down? (intersect-compass ox oy nx ny x y false true identity identity))))
+        [ox oy oix oiy ofx ofy] (vec2->parts oldpos)]
+    (match [(Math/sign (- nx ox)) (Math/sign (- ny oy))]
+      [1 1] (intersect-diag ox oy nx ny x y identity identity)
+      [-1 1] (intersect-diag ox oy nx ny x y inc identity)
+      [1 -1] (intersect-diag ox oy nx ny x y identity inc)
+      [-1 -1] (intersect-diag ox oy nx ny x y inc inc)
+      [-1 _] (intersect-compass ox oy nx ny x y true false inc identity)
+      [1 _] (intersect-compass ox oy nx ny x y true false identity identity)
+      [_ -1] (intersect-compass ox oy nx ny x y false true identity inc)
+      [_ 1] (intersect-compass ox oy nx ny x y false true identity identity))))
 
 (defn reject [oldpos newpos x y]
    (let [newpos (intersect oldpos newpos x y)]
