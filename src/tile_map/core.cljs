@@ -104,217 +104,10 @@
    player
    (+ x (* 16 4 px)) (+ y (* 16 4 py))))
 
-(defn vec2->parts [pos]
-  (let [x (vec2/get-x pos)
-        y (vec2/get-y pos)
-        ix (int x)
-        iy (int y)
-        fx (- x ix)
-        fy (- y iy)]
-    [x y ix iy fx fy])
-  )
-
 (def h-edge 0.3)
 (def minus-h-edge (- 1 h-edge))
 (def v-edge 0.40)
 (def minus-v-edge (- 1 v-edge))
-
-(defn apply-edge-constraints [oldpos newpos]
-  (let [[nx ny nix niy nfx nfy] (vec2->parts newpos)
-        [ox oy oix oiy ofx ofy] (vec2->parts oldpos)
-        dx (- nix oix)
-        dy (- niy oiy)
-
-        <left-edge (< nfx h-edge)
-        >right-edge (> nfx minus-h-edge)
-        <top-edge (< nfy v-edge)
-        >bottom-edge (> nfy minus-v-edge)
-
-        pass? (passable? nix niy)
-        pass-left? (passable? (dec nix) niy)
-        pass-right? (passable? (inc nix) niy)
-        pass-top? (passable? nix (dec niy))
-        pass-bottom? (passable? nix (inc niy))
-        pass-top-left? (passable? (dec nix) (dec niy))
-        pass-bottom-left? (passable? (dec nix) (inc niy))
-        pass-top-right? (passable? (inc nix) (dec niy))
-        pass-bottom-right? (passable? (inc nix) (inc niy))]
-    (match [<left-edge >right-edge <top-edge >bottom-edge
-            pass-top-left? pass-top? pass-top-right?
-            pass-left? pass? pass-right?
-            pass-bottom-left? pass-bottom? pass-bottom-right?]
-
-           ;; outer top-right corner
-           [true _ _ true
-            _ _ _
-            true true _
-            false true _]
-           (let [ddx (- h-edge nfx) ddy (- nfy minus-v-edge)]
-             (if (< ddx ddy)
-               (vec2/vec2 (+ nix h-edge) ny)
-               (vec2/vec2 nx (+ niy minus-v-edge))))
-
-           ;; outer bottom-right corner
-           [true _ true _
-            false true _
-            true true _
-            _ _ _]
-           (let [ddx (- h-edge nfx) ddy (- v-edge nfy)]
-             (if (< ddx ddy)
-               (vec2/vec2 (+ nix h-edge) ny)
-               (vec2/vec2 nx (+ niy v-edge))))
-
-           ;; outer top left
-           [_ true _ true
-            _ _ _
-            _ true true
-            _ true false]
-           (let [ddx (- nfx minus-h-edge) ddy (- nfy minus-v-edge)]
-             (if (< ddx ddy)
-               (vec2/vec2 (+ nix minus-h-edge) ny)
-               (vec2/vec2 nx (+ niy minus-v-edge))))
-
-           ;; outer bottom left
-           [_ true true _
-            _ true false
-            _ true true
-            _ _ _]
-           (let [ddx (- nfx minus-h-edge) ddy (- v-edge nfy)]
-             (if (< ddx ddy)
-               (vec2/vec2 (+ nix minus-h-edge) ny)
-               (vec2/vec2 nx (+ niy v-edge))))
-
-           ;; inner bottom left
-           [true _ _ true
-            _ _ _
-            false true _
-            _ false _]
-           (vec2/vec2 (+ nix h-edge) (+ niy minus-v-edge))
-
-           ;; inner top left
-           [true _ true _
-            _ false _
-            false true _
-            _ _ _]
-           (vec2/vec2 (+ nix h-edge) (+ niy v-edge))
-
-           ;; inner top right
-           [_ true true _
-            _ false _
-            _ true false
-            _ _ _]
-           (vec2/vec2 (+ nix minus-h-edge) (+ niy v-edge))
-
-           ;; inner bottom right
-           [_ true _ true
-            _ _ _
-            _ true false
-            _ false _]
-           (vec2/vec2 (+ nix minus-h-edge) (+ niy minus-v-edge))
-
-           ;; right edge
-           [true _ _ _
-            _ _ _
-            false _ _
-            _ _ _]
-           (vec2/vec2 (+ nix h-edge) ny)
-
-           ;; left edge
-           [_ true _ _
-            _ _ _
-            _ _ false
-            _ _ _]
-           (vec2/vec2 (+ nix minus-h-edge) ny)
-
-           ;; bottom edge
-           [_ _ true _
-            _ false _
-            _ _ _
-            _ _ _]
-           (vec2/vec2 nx (+ niy v-edge))
-
-           ;; top edge
-           [_ _ _ true
-            _ _ _
-            _ _ _
-            _ false _]
-           (vec2/vec2 nx (+ niy minus-v-edge))
-
-           ;; open space
-           [_ _ _ _
-            _ _ _
-            _ _ _
-            _ _ _]
-           newpos)))
-
-(defn intersect-diag [x0 y0 x1 y1 x y x-fn y-fn]
-  (let [top-x (line/intersect-x x0 y0 x1 y1 (y-fn y))
-        left-y (line/intersect-y x0 y0 x1 y1 (x-fn x))]
-    (cond (< x top-x (inc x))
-          ;; cuts top
-          (vec2/vec2 top-x (y-fn y))
-
-          ;; cuts left
-          (< y left-y (inc y))
-          (vec2/vec2 (x-fn x) left-y))))
-
-(defn intersect-compass-y[x0 y0 x1 y1 x y y-fn]
-  (let [bottom-x (line/intersect-x x0 y0 x1 y1 (y-fn y))]
-      (when (< x bottom-x (inc x))
-        (vec2/vec2 bottom-x (y-fn y)))))
-
-(defn intersect-compass-x [x0 y0 x1 y1 x y x-fn]
-  (let [right-y (line/intersect-y x0 y0 x1 y1 (x-fn x))]
-    (when (< y right-y (inc y))
-      (vec2/vec2 (x-fn x) right-y))))
-
-(defn intersect [oldpos newpos x y]
-  (let [[nx ny nix niy nfx nfy] (vec2->parts newpos)
-        [ox oy oix oiy ofx ofy] (vec2->parts oldpos)]
-    (match [(Math/sign (- nx ox)) (Math/sign (- ny oy))]
-      [1 1] (intersect-diag ox oy nx ny x y identity identity)
-      [-1 1] (intersect-diag ox oy nx ny x y inc identity)
-      [1 -1] (intersect-diag ox oy nx ny x y identity inc)
-      [-1 -1] (intersect-diag ox oy nx ny x y inc inc)
-      [-1 _] (intersect-compass-x ox oy nx ny x y inc)
-      [1 _] (intersect-compass-x ox oy nx ny x y identity)
-      [_ -1] (intersect-compass-y ox oy nx ny x y inc)
-      [_ 1] (intersect-compass-y ox oy nx ny x y identity))))
-
-(defn reject [oldpos newpos x y]
-   (let [newpos (intersect oldpos newpos x y)]
-     (-> (vec2/sub newpos oldpos)
-        (vec2/scale 0.999)
-        (vec2/add oldpos))))
-
-
-(defn constrain [newpos oldpos]
-  (let [[nx ny nix niy nfx nfy] (vec2->parts newpos)
-        [ox oy oix oiy ofx ofy] (vec2->parts oldpos)
-        dx (- nix oix)
-        dy (- niy oiy)]
-    (if (and (> 2 (Math/abs dx))
-             (> 2 (Math/abs dy))
-             (> 2 (+ (Math/abs dx) (Math/abs dy)))    ;; cant jump through diagonals
-             (passable? nix niy))
-      ;; small +/- 1 tile horiz/vert movements
-      ;; in an open square. apply edge contsraints
-      (apply-edge-constraints oldpos newpos)
-
-      ;; new tile collides. moving so fast got embedded in other tile.
-      ;; eject drastically!
-      (let [points (line/all-covered ox oy nx ny)]
-        (loop [[[x y] & r] points]
-          (if (passable? x y)
-            (if (zero? (count r))
-              ;; no colision found
-              newpos
-
-              ;; try next point
-              (recur r))
-
-            ;; not passable! reject from this tile
-            (apply-edge-constraints oldpos (reject oldpos newpos x y))))))))
 
 (defonce main
   (go
@@ -341,7 +134,7 @@
         [background bg
          tilemap batch
          player (s/make-sprite stand :scale 4)]
-        (loop [pos (vec2/vec2 -500 -400) fnum 0
+        (loop [fnum 0
                ppos (vec2/vec2 1.5 4.5)]
           (let [
                 pos (-> ppos
@@ -370,10 +163,13 @@
                         (+ -2000 (mod (int (* y 0.90)) ( * 4 32))))
 
             (<! (e/next-frame))
-            (recur (-> ppos
-                       (vec2/scale (* -2 32)))
-                   (inc fnum)
+            (recur (inc fnum)
                    (-> joy
                        (vec2/scale 1.5)
                        (vec2/add ppos)
-                       (constrain ppos)))))))))
+                       ((partial line/constrain {:passable? passable?
+                                                :h-edge h-edge
+                                                :v-edge v-edge
+                                                :minus-h-edge minus-h-edge
+                                                :minus-v-edge minus-v-edge})
+                        ppos)))))))))
