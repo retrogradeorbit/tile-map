@@ -295,8 +295,9 @@
         dy (- niy oiy)]
     (if (and (> 2 (Math/abs dx))
              (> 2 (Math/abs dy))
+             (> 2 (+ (Math/abs dx) (Math/abs dy)))    ;; cant jump through diagonals
              (passable? nix niy))
-      ;; small +/- 1 tile movements
+      ;; small +/- 1 tile horiz/vert movements
       ;; in an open square. apply edge contsraints
       (apply-edge-constraints oldpos newpos)
 
