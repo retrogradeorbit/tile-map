@@ -138,25 +138,27 @@
 
           :default (assert false "cell-coverage fatal error!"))))))
 
-(defn cell-coverage-line [x0 y0 x1 y1 xtest ytest dx-fn dy-fn]
+(defn cell-coverage-line-x [x0 y0 x1 y1 dx-fn]
   (loop [x (int x0)
          y (int y0)
          s [[x y]]]
-    (if (or (and xtest (= x (Math/floor x1)))
-            (and ytest (= y (Math/floor y1))))
+    (if (= x (Math/floor x1))
       s
-      (cond
-        xtest
-        (let [right-y (intersect-y x0 y0 x1 y1 (inc x))]
-          (assert (<= y right-y (inc y)) "intersection out of range")
-          (recur (dx-fn x) (dy-fn y)
-                 (conj s [(dx-fn x) (dy-fn y)])))
+      (let [right-y (intersect-y x0 y0 x1 y1 (inc x))]
+        (assert (<= y right-y (inc y)) "intersection out of range")
+        (recur (dx-fn x) y
+               (conj s [(dx-fn x) y]))))))
 
-        ytest
-        (let [top-x (intersect-x x0 y0 x1 y1 (inc y))]
-          (assert (<= x top-x (inc x)) "intersection out of range")
-          (recur (dx-fn x) (dy-fn y)
-                 (conj s [(dx-fn x) (dy-fn y)])))))))
+(defn cell-coverage-line-y [x0 y0 x1 y1 dy-fn]
+  (loop [x (int x0)
+         y (int y0)
+         s [[x y]]]
+    (if (= y (Math/floor y1))
+      s
+      (let [top-x (intersect-x x0 y0 x1 y1 (inc y))]
+        (assert (<= x top-x (inc x)) "intersection out of range")
+        (recur x (dy-fn y)
+               (conj s [x (dy-fn y)]))))))
 
 (defn all-covered [x0 y0 x1 y1]
   (match [(Math/sign (- x1 x0)) (Math/sign (- y1 y0))]
@@ -168,7 +170,7 @@
          [-1 -1] (cell-coverage x0 y0 x1 y1 identity identity dec dec)
 
          ;; compass directions
-         [1 _] (cell-coverage-line x0 y0 x1 y1 true false inc identity)
-         [-1 _] (cell-coverage-line x0 y0 x1 y1 true false dec identity)
-         [_ -1] (cell-coverage-line x0 y0 x1 y1 false true identity dec)
-         [_ 1] (cell-coverage-line x0 y0 x1 y1 false true identity inc)))
+         [1 _] (cell-coverage-line-x x0 y0 x1 y1 inc)
+         [-1 _] (cell-coverage-line-x x0 y0 x1 y1 dec)
+         [_ -1] (cell-coverage-line-y x0 y0 x1 y1 dec)
+         [_ 1] (cell-coverage-line-y x0 y0 x1 y1 inc)))
