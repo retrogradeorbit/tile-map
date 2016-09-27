@@ -8,6 +8,9 @@ A tile map implentation using ParticleContainer in Pixi.
 
 [WATCH THE DEMO NOW!](https://retrogradeorbit.github.io/tile-map/)
 
+Plug in a game controller and use the left analogue stick to move the
+character around.
+
 Tiles from Brandon Jones. http://blog.tojicode.com/2012/07/sprite-tile-maps-on-gpu.html Who lifted them from Spelunky: http://www.spelunkyworld.com/
 
 ## Setup
