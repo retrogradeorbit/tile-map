@@ -109,6 +109,23 @@
 (def v-edge 0.40)
 (def minus-v-edge (- 1 v-edge))
 
+(defn hollow
+  "if vector is less than a certain size, make it zero"
+  [v lim]
+  (if (< (vec2/magnitude-squared v) lim)
+    (vec2/zero)
+    v))
+
+(def jump-accel-1 0.1)
+(def jump-accel-2+ 0.03)
+(def jump-frames 10)
+
+(defn jump-button-pressed? []
+  (or
+   (e/is-pressed? :z)
+   (e/is-pressed? :space)
+   (gp/button-pressed? 0 :x)))
+
 (defonce main
   (go
     ;; load image tilesets
@@ -124,6 +141,8 @@
           batch (js/PIXI.ParticleContainer.)
           stand (t/sub-texture (r/get-texture :tiles :nearest) [0 96] [16 16])
           walk (t/sub-texture (r/get-texture :tiles :nearest) [16 96] [16 16])
+
+          accel (vec2/vec2 0 0.01)
           ]
       (add-tiles! batch tile-set tile-map)
       (s/set-scale! batch 4)
@@ -135,10 +154,13 @@
          tilemap batch
          player (s/make-sprite stand :scale 4)]
         (loop [fnum 0
-               ppos (vec2/vec2 1.5 4.5)]
+               old-vel (vec2/vec2 0 0)
+               ppos (vec2/vec2 1.5 4.5)
+               jump-pressed 0]
           (let [
+                old-pos ppos
                 pos (-> ppos
-                       (vec2/scale (* -2 32)))
+                        (vec2/scale (* -2 32)))
                 x (vec2/get-x pos) ;; (+ -2000 (* 1000 (Math/sin theta)))
                 y (vec2/get-y pos) ;; (+ -1000 (* 500 (Math/cos theta)))
 
@@ -149,7 +171,10 @@
                 dx (- px pix)
                 dy (- py piy)
 
-                joy (vec2/vec2 (or (gp/axis 0) 0)
+                joy (vec2/vec2 (or (gp/axis 0)
+                                   (cond (e/is-pressed? :left) -1
+                                         (e/is-pressed? :right) 1
+                                         :default 0) )
                                (or (gp/axis 1) 0))
                 ]
 
@@ -163,13 +188,60 @@
                         (+ -2000 (mod (int (* y 0.90)) ( * 4 32))))
 
             (<! (e/next-frame))
-            (recur (inc fnum)
-                   (-> joy
-                       (vec2/scale 1.5)
-                       (vec2/add ppos)
-                       ((partial line/constrain {:passable? passable?
-                                                :h-edge h-edge
-                                                :v-edge v-edge
-                                                :minus-h-edge minus-h-edge
-                                                :minus-v-edge minus-v-edge})
-                        ppos)))))))))
+            ;(log dy minus-v-edge)
+            (let [
+                  jump-pressed (if (jump-button-pressed?)
+                                 (inc jump-pressed)
+                                 0)
+
+                  ;_ (log "jump pressed" jump-pressed)
+
+                  jump-force (if (and (<= 1 jump-pressed jump-frames)
+                                      (jump-button-pressed?))
+                               (vec2/vec2 0 (- (if (= 1 jump-pressed)
+                                                 jump-accel-1
+                                                 jump-accel-2+)))
+                               (vec2/zero))
+
+                  joy-acc (-> joy
+                              (hollow 0.2)
+                              (vec2/scale 0.01))
+
+                  player-vel-x (Math/abs (vec2/get-x old-vel))
+
+                  player-brake
+                  (match [(Math/sign (vec2/get-x old-vel)) (Math/sign (vec2/get-x (hollow joy 0.5)))]
+                         [1 0] (vec2/vec2 -1 0)
+                         [1 -1] (vec2/vec2 -1 0)
+                         [-1 0] (vec2/vec2 1 0)
+                         [-1 1] (vec2/vec2 1 0)
+                         [_ _] (vec2/zero)
+
+                         )
+
+                  new-vel (-> old-vel
+                              (vec2/add accel)
+                              (vec2/add jump-force)
+                              (vec2/add joy-acc)
+                              (vec2/add (vec2/scale player-brake (/ player-vel-x 3)))
+                              (vec2/scale 0.98))
+                  new-pos (-> old-pos
+                              (vec2/add new-vel))
+                  con-pos (line/constrain {:passable? passable?
+                                           :h-edge h-edge
+                                           :v-edge v-edge
+                                           :minus-h-edge minus-h-edge
+                                           :minus-v-edge minus-v-edge}
+                                          new-pos old-pos)
+
+
+                  old-vel (vec2/sub con-pos old-pos)]
+              (if (< (vec2/get-x old-vel) 0)
+                (s/set-scale! player -4 4)
+                (s/set-scale! player 4 4)
+                )
+              (recur (inc fnum)
+                     old-vel
+                     con-pos
+                     jump-pressed
+                     ))))))))
