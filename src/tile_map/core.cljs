@@ -190,8 +190,23 @@
             (<! (e/next-frame))
             ;(log dy minus-v-edge)
             (let [
-                  jump-pressed (if (jump-button-pressed?)
+                  fallen-pos (line/constrain {:passable? passable?
+                                           :h-edge h-edge
+                                           :v-edge v-edge
+                                           :minus-h-edge minus-h-edge
+                                           :minus-v-edge minus-v-edge}
+                                          (vec2/add old-pos (vec2/vec2 0 0.1)) old-pos)
+
+                  standing-on-ground? (= (vec2/get-y fallen-pos) (vec2/get-y old-pos))
+
+                  jump-pressed (cond
+                                 (and (jump-button-pressed?) (zero? jump-pressed) standing-on-ground?)
                                  (inc jump-pressed)
+
+                                 (and (jump-button-pressed?) (pos? jump-pressed))
+                                 (inc jump-pressed)
+
+                                 :default
                                  0)
 
                   ;_ (log "jump pressed" jump-pressed)
