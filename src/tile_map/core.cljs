@@ -203,6 +203,9 @@
                   square-on (get-tile-at pix piy)
                   square-below (get-tile-at pix (inc piy))
 
+                  square-standing-on (get-tile-at pix
+                                                  (int (+ 0.3 py)))
+
                   on-ladder-transition? (and
                                          (or (= square-on "|")
                                              (= square-on "/")
@@ -210,13 +213,18 @@
                                              (= square-below "/")
                                              ))
 
-                  on-ladder? (or (= square-on "|")
-                                 (= square-on "/"))
 
 
-                  _ (when on-ladder-transition? (log state))
+                  on-ladder? (or (= square-standing-on "|")
+                                 (= square-standing-on "/"))
 
-                  fallen-pos (line/constrain {:passable? passable?
+                  ladder-up? (or (= square-standing-on "|")
+                                 (= square-standing-on "/"))
+
+                  ladder-down? (or (= square-below "|")
+                                   (= square-below "/"))
+
+                  fallen-pos (line/constrain {:passable? walkable?
                                               :h-edge h-edge
                                               :v-edge v-edge
                                               :minus-h-edge minus-h-edge
@@ -226,7 +234,7 @@
                   standing-on-ground? (= (vec2/get-y fallen-pos) (vec2/get-y old-pos))
 
                   jump-pressed (cond
-                                 (and (jump-button-pressed?) (zero? jump-pressed) standing-on-ground?)
+                                 (and (jump-button-pressed?) (zero? jump-pressed) standing-on-ground?) ;; cant jump off ladder! if you can, problem... when jumping off lader, state stays climbing causing no accel for the jump
                                  (inc jump-pressed)
 
                                  (and (jump-button-pressed?) (pos? jump-pressed))
@@ -248,6 +256,15 @@
                              (hollow 0.2)
                              (vec2/get-y))
 
+                  joy-dy (cond
+                           (and (not ladder-up?) (neg? joy-dy))
+                           0
+
+                           (and (not ladder-down?) (not ladder-up?) (pos? joy-dy))
+                           0
+
+                           :default joy-dy)
+
                   joy-dx (-> joy
                              (hollow 0.2)
                              (vec2/scale 0.01)
@@ -256,10 +273,10 @@
                   state-ladder? (and on-ladder-transition?
                                      (not (zero? joy-dy)))
 
-
                   joy-acc (if (= :climbing state)
                             (vec2/vec2 joy-dx (* 0.1 joy-dy))
                             (vec2/vec2 joy-dx 0))
+
 
                   #_ (log (str joy-acc))
 
@@ -301,7 +318,17 @@
                                           new-pos old-pos)
 
 
-                  old-vel (vec2/sub con-pos old-pos)]
+                  #_ (log dy on-ladder? ladder-up? ladder-down? state state-ladder? next-state (str joy-acc) (str player-brake) ;(str new-vel) (vec2/get-y old-vel) (str old-pos "=>" con-pos)
+                       )
+
+
+
+                  old-vel (if (= :walking state) (vec2/sub con-pos old-pos)
+                              (-> (vec2/sub con-pos old-pos)
+                                  (vec2/set-y 0)))
+
+                  ;_ (log (str "!" old-vel))
+                  ]
               (if (< (vec2/get-x old-vel) 0)
                 (s/set-scale! player -4 4)
                 (s/set-scale! player 4 4)
