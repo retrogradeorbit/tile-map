@@ -4,12 +4,22 @@ Test out methods for making a single sprite sheet based tilemap that is performa
 
 ## Overview
 
-A tile map implentation using ParticleContainer in Pixi.
+A tile map implentation using ParticleContainer in Pixi. Tile map collision is implemented.
+
+Added a little gravity and got a mini-platformer:
 
 [WATCH THE DEMO NOW!](https://retrogradeorbit.github.io/tile-map/)
 
+### Keyboard Control
+
+Cursor keys to move the character and climb ladders. 'Z' or 'space' to jump.
+
+### Gamepad Control
+
 Plug in a game controller and use the left analogue stick to move the
-character around.
+character around. Press 'X' to jump.
+
+## Tileset
 
 Tiles from Brandon Jones. http://blog.tojicode.com/2012/07/sprite-tile-maps-on-gpu.html Who lifted them from Spelunky: http://www.spelunkyworld.com/
 
