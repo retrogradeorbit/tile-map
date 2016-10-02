@@ -83,6 +83,12 @@
 
 (def passable? (comp not not-passable?))
 
+(defn walkable? [x y]
+  (if (= "/" (get-tile-at x y))
+    false
+    (passable? x y))
+  )
+
 (defn add-tiles! [batch tile-set tile-map]
   (doall
    (for [row (range (count tile-map))
@@ -153,7 +159,9 @@
         [background bg
          tilemap batch
          player (s/make-sprite stand :scale 4)]
-        (loop [fnum 0
+        (loop [
+               state :walking
+               fnum 0
                old-vel (vec2/vec2 0 0)
                ppos (vec2/vec2 1.5 4.5)
                jump-pressed 0]
@@ -183,32 +191,37 @@
                 ]
 
             (s/set-texture! player (if (zero? (mod (int (/ fnum 10)) 2)) stand walk))
-
             (set-player player (int x) (int y) px py)
-
             (s/set-pos! batch (int x) (int y))
             (s/set-pos! background
                         (+ -2000 (mod (int (* x 0.90)) (* 4 32)))
                         (+ -2000 (mod (int (* y 0.90)) ( * 4 32))))
 
             (<! (e/next-frame))
-            ;(log dy minus-v-edge)
+                                        ;(log dy minus-v-edge)
             (let [
                   square-on (get-tile-at pix piy)
                   square-below (get-tile-at pix (inc piy))
 
+                  on-ladder-transition? (and
+                                         (or (= square-on "|")
+                                             (= square-on "/")
+                                        ;(= square-below "|")
+                                             (= square-below "/")
+                                             ))
+
                   on-ladder? (or (= square-on "|")
-                                 (= square-on "/")
-                                 ;(= square-below "|")
-                                 (= square-below "/")
-                                 )
+                                 (= square-on "/"))
+
+
+                  _ (when on-ladder-transition? (log state))
 
                   fallen-pos (line/constrain {:passable? passable?
-                                           :h-edge h-edge
-                                           :v-edge v-edge
-                                           :minus-h-edge minus-h-edge
-                                           :minus-v-edge minus-v-edge}
-                                          (vec2/add old-pos (vec2/vec2 0 0.1)) old-pos)
+                                              :h-edge h-edge
+                                              :v-edge v-edge
+                                              :minus-h-edge minus-h-edge
+                                              :minus-v-edge minus-v-edge}
+                                             (vec2/add old-pos (vec2/vec2 0 0.1)) old-pos)
 
                   standing-on-ground? (= (vec2/get-y fallen-pos) (vec2/get-y old-pos))
 
@@ -222,7 +235,7 @@
                                  :default
                                  0)
 
-                   ;_ (log "jump pressed" jump-pressed)
+                                        ;_ (log "jump pressed" jump-pressed)
 
                   jump-force (if (and (<= 1 jump-pressed jump-frames)
                                       (jump-button-pressed?))
@@ -236,11 +249,15 @@
                              (vec2/get-y))
 
                   joy-dx (-> joy
-                              (hollow 0.2)
-                              (vec2/scale 0.01)
-                              (vec2/get-x))
+                             (hollow 0.2)
+                             (vec2/scale 0.01)
+                             (vec2/get-x))
 
-                  joy-acc (if on-ladder?
+                  state-ladder? (and on-ladder-transition?
+                                     (not (zero? joy-dy)))
+
+
+                  joy-acc (if (= :climbing state)
                             (vec2/vec2 joy-dx (* 0.1 joy-dy))
                             (vec2/vec2 joy-dx 0))
 
@@ -260,15 +277,19 @@
                          )
 
                   new-vel (-> old-vel
-                              (vec2/set-y (if on-ladder? 0 (vec2/get-y old-vel)))
-                              (vec2/add (if on-ladder? (vec2/zero) gravity))
+                              (vec2/set-y (if (= state :climbing) 0 (vec2/get-y old-vel)))
+                              (vec2/add (if (= state :climbing) (vec2/zero) gravity))
+                              #_ (vec2/add gravity)
                               (vec2/add jump-force)
                               (vec2/add joy-acc)
                               (vec2/add (vec2/scale player-brake (/ player-vel-x 3)))
                               (vec2/scale 0.98))
                   new-pos (-> old-pos
                               (vec2/add new-vel))
-                  con-pos (line/constrain {:passable? passable?
+                  con-pos (line/constrain {:passable?
+                                           (if (= :walking state)
+                                             walkable?
+                                             passable?)
                                            :h-edge h-edge
                                            :v-edge v-edge
                                            :minus-h-edge minus-h-edge
@@ -281,8 +302,12 @@
                 (s/set-scale! player -4 4)
                 (s/set-scale! player 4 4)
                 )
-              (recur (inc fnum)
-                     old-vel
-                     con-pos
-                     jump-pressed
-                     ))))))))
+              (recur
+               (if state-ladder?
+                 :climbing
+                 (if on-ladder? state :walking))
+               (inc fnum)
+               old-vel
+               con-pos
+               jump-pressed
+               ))))))))
