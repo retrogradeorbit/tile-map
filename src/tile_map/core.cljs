@@ -286,8 +286,12 @@
                               (vec2/scale 0.98))
                   new-pos (-> old-pos
                               (vec2/add new-vel))
+
+                  next-state (if state-ladder?
+                               :climbing
+                               (if on-ladder? state :walking))
                   con-pos (line/constrain {:passable?
-                                           (if (= :walking state)
+                                           (if (= :walking next-state)
                                              walkable?
                                              passable?)
                                            :h-edge h-edge
@@ -303,9 +307,7 @@
                 (s/set-scale! player 4 4)
                 )
               (recur
-               (if state-ladder?
-                 :climbing
-                 (if on-ladder? state :walking))
+               next-state
                (inc fnum)
                old-vel
                con-pos
