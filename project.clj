@@ -23,6 +23,8 @@
 
   :clean-targets ^{:protect false} ["resources/public/js/compiled" "target"]
 
+  :jvm-opts ["-Xss16m"]
+
   :cljsbuild {:builds
               [{:id "dev"
                 :source-paths ["src"]
