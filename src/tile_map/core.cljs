@@ -142,7 +142,7 @@
           stand (t/sub-texture (r/get-texture :tiles :nearest) [0 96] [16 16])
           walk (t/sub-texture (r/get-texture :tiles :nearest) [16 96] [16 16])
 
-          accel (vec2/vec2 0 0.01)
+          gravity (vec2/vec2 0 0.01)
           ]
       (add-tiles! batch tile-set tile-map)
       (s/set-scale! batch 4)
@@ -175,7 +175,11 @@
                                    (cond (e/is-pressed? :left) -1
                                          (e/is-pressed? :right) 1
                                          :default 0) )
-                               (or (gp/axis 1) 0))
+                               (or (gp/axis 1)
+                                   (cond (e/is-pressed? :up) -1
+                                         (e/is-pressed? :down) 1
+                                         :default 0)
+                                   ))
                 ]
 
             (s/set-texture! player (if (zero? (mod (int (/ fnum 10)) 2)) stand walk))
@@ -190,6 +194,15 @@
             (<! (e/next-frame))
             ;(log dy minus-v-edge)
             (let [
+                  square-on (get-tile-at pix piy)
+                  square-below (get-tile-at pix (inc piy))
+
+                  on-ladder? (or (= square-on "|")
+                                 (= square-on "/")
+                                 ;(= square-below "|")
+                                 (= square-below "/")
+                                 )
+
                   fallen-pos (line/constrain {:passable? passable?
                                            :h-edge h-edge
                                            :v-edge v-edge
@@ -209,7 +222,7 @@
                                  :default
                                  0)
 
-                  ;_ (log "jump pressed" jump-pressed)
+                   ;_ (log "jump pressed" jump-pressed)
 
                   jump-force (if (and (<= 1 jump-pressed jump-frames)
                                       (jump-button-pressed?))
@@ -218,14 +231,26 @@
                                                  jump-accel-2+)))
                                (vec2/zero))
 
-                  joy-acc (-> joy
+                  joy-dy (-> joy
+                             (hollow 0.2)
+                             (vec2/get-y))
+
+                  joy-dx (-> joy
                               (hollow 0.2)
-                              (vec2/scale 0.01))
+                              (vec2/scale 0.01)
+                              (vec2/get-x))
+
+                  joy-acc (if on-ladder?
+                            (vec2/vec2 joy-dx (* 0.1 joy-dy))
+                            (vec2/vec2 joy-dx 0))
+
+                  #_ (log (str joy-acc))
 
                   player-vel-x (Math/abs (vec2/get-x old-vel))
 
                   player-brake
-                  (match [(Math/sign (vec2/get-x old-vel)) (Math/sign (vec2/get-x (hollow joy 0.5)))]
+                  (match [(Math/sign (vec2/get-x old-vel))
+                          (Math/sign (vec2/get-x (hollow joy 0.5)))]
                          [1 0] (vec2/vec2 -1 0)
                          [1 -1] (vec2/vec2 -1 0)
                          [-1 0] (vec2/vec2 1 0)
@@ -235,7 +260,8 @@
                          )
 
                   new-vel (-> old-vel
-                              (vec2/add accel)
+                              (vec2/set-y (if on-ladder? 0 (vec2/get-y old-vel)))
+                              (vec2/add (if on-ladder? (vec2/zero) gravity))
                               (vec2/add jump-force)
                               (vec2/add joy-acc)
                               (vec2/add (vec2/scale player-brake (/ player-vel-x 3)))
