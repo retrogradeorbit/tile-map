@@ -224,6 +224,8 @@
                   ladder-down? (or (= square-below "|")
                                    (= square-below "/"))
 
+                  ;; simulate a little vertical move down to see if we are
+                  ;; standing on solid ground
                   fallen-pos (line/constrain {:passable? walkable?
                                               :h-edge h-edge
                                               :v-edge v-edge
@@ -282,6 +284,9 @@
 
                   player-vel-x (Math/abs (vec2/get-x old-vel))
 
+                  ;; when moving quickly left and right, and the
+                  ;; joystick is centered or reversed, this breaking
+                  ;; horitontal force is applied
                   player-brake
                   (match [(Math/sign (vec2/get-x old-vel))
                           (Math/sign (vec2/get-x (hollow joy 0.5)))]
