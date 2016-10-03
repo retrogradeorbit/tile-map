@@ -294,9 +294,16 @@
                          [1 -1] (vec2/vec2 -1 0)
                          [-1 0] (vec2/vec2 1 0)
                          [-1 1] (vec2/vec2 1 0)
-                         [_ _] (vec2/zero)
+                         [_ _] (vec2/zero))
 
-                         )
+
+                  next-state (if state-ladder?
+                               :climbing
+                               (if on-ladder? state :walking))
+
+                  passable-fn (if (= :walking next-state)
+                                             walkable?
+                                             passable?)
 
                   new-vel (-> old-vel
                               (vec2/set-y (if (= state :climbing) 0 (vec2/get-y old-vel)))
@@ -306,16 +313,11 @@
                               (vec2/add joy-acc)
                               (vec2/add (vec2/scale player-brake (/ player-vel-x 3)))
                               (vec2/scale 0.98))
+
                   new-pos (-> old-pos
                               (vec2/add new-vel))
 
-                  next-state (if state-ladder?
-                               :climbing
-                               (if on-ladder? state :walking))
-                  con-pos (line/constrain {:passable?
-                                           (if (= :walking next-state)
-                                             walkable?
-                                             passable?)
+                  con-pos (line/constrain {:passable? passable-fn
                                            :h-edge h-edge
                                            :v-edge v-edge
                                            :minus-h-edge minus-h-edge
