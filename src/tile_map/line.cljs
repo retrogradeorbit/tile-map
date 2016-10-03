@@ -387,3 +387,8 @@
 
             ;; not passable! reject from this tile
             (apply-edge-constraints opts oldpos (reject oldpos newpos x y))))))))
+
+(defn constrain-offset [opts offset newpos oldpos]
+  (vec2/add
+   offset
+   (constrain opts (vec2/sub newpos offset) (vec2/sub oldpos offset))))
