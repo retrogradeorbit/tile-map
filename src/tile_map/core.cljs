@@ -18,39 +18,50 @@
 
 (def tile-map
   [
-"-BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB-"
-"-                                                                   -"
-"-         c        OOOOOOOOOOO                                      -"
-"-       OOOO      T           T             c                 TTTTTT-"
-"-                 B           -OOO       TTTT          p   TTT-------"
-"-    c             OOOO       B      b   BBBB      TTTTTTOOBBBBBBBBB-"
-"-OOOOOOOO              OOOOOOO      TTTT          T-                -"
-"-              OOOO                 ---B         OBB -BB-TT TTTOOOOO-"
-"-                    b   c    p     ---              -  --- ---     -"
-"-                  XXXX/XXXXXXXXXXXXBBB         OOOOOB  BBB ---     -"
-"-TTTTTTTTTTTTTTTTTTX   |                                    ---     -"
-"-----.--o----------X   |                                TTTT---     -"
-"-------------o--BBBX   | XXXXX                          BBBBBBB     -"
-"-BBBBB----------bbb    |  0                      b                  -"
-"-     BB--------TTTXX  XXXXXXXX/XX            XXXXXXXX/X            -"
-"-       BBB--------XXbb 0      |                      |             -"
-"-          BBBBBBBBXXXXXXX     |                      |             -"
-"-                              |                      |             -"
-"-                     XXXXXXXX |       /              |             -"
-"- p       X   X                |       |              |             -"
-"-TTTTTTT/TTTTTTTTTT           c|p      |     p        |             -"
-"--------|----------TT c    OOOOOOOO    |TTTTTTTTTTTTTTTT            -"
-"-BBBBBBB|BBBBBBBBBBB-TT                |--BBBB-----o----            -"
-"-       |           BB-TT p            |--    ----------            -"
-"-       |             B--TTTT  b       |--    BBBB------            -"
-"-       TTTTTT  p      BB----TTTTT     |-B       |------            -"
-"-b      BBBB--TTT        BB-------T    TB   TTTTT|------            -"
-"-OO         --.--          BBBBBBB-TTTTB   T-BBBB|BBBBBB           T-"
-"-           ----.T                BBBBB   T--    |                 --"
-"- c    b    ------c    p      c          T---    X               TT--"
-"-TTTTTTTTTTT------TTTTTTTTTTTTTTTTTTTTTTT----TTTTTTTTTTTTTTTTTTTT----"
-"---------------------------------------------------------------------"
+"-BBBBBBBBBBBBBBBBBBBBBBBXXXXXBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB-------------"
+"-                         b X                                     b   ---BBBBBB----"
+"-         c     OOOOXXXXXXXXX                               X/XXXXXX  --B      B---"
+"-       OOOO        X                       c                |        --        ---"
+"-                   X                    TTTT          p     |p  c    --        ---"
+"-    c              X                b   BBBB      TTTTTTOOOOOOOOOOOOOBB      TT---"
+"-OOOOOOOO           X               TTTT          T-                       TTT-----"
+"-                   X               ---B         OBB -BB-TT TTTTTTTTTTTTTTT--------"
+"-                   Xb   c    p     ---              -  --- -----------------BBBB--"
+"-                   XXX/XXXXXXXXXXXXBBB         OOOOOB  BBB ------------BBBBB   |--"
+"-            T      X  |                                    ------------bbbbbbb |--"
+"-           T-      X  |                                TTTT---BBBBB----TTTTTTT |--"
+"-TTTTTTTTTTT--OOOOO X  | XXXXX                          BBBBBBB     ----------- |--"
+"-BBBBB--.o----  bbb    |  0                      b                  ----BBBBBBB |--"
+"-     BB------TTTTTXX  XXXXX X X X            XXXXXXXX/X            ----        |--"
+"-       BBB--------Xpbb 0                             |   b b       ---- bbbbTTTT--"
+"-OOO/      BBBXXXXXXXXXXXX                          XXXXXXXXXXXX    ---- TTTT------"
+"-   |         Xbb     Xbb              /              |             ---- BBBBBBB---"
+"-   |         XXXXXXX XXXXXXX X XX     |              |             ----        ---"
+"- p |     X   X   c      Xc      X     |              |             ----TTT bbbb---"
+"-TTTTTTT/TTTTTX XXXXXXX XXXXXX XXX     |     p        |             BBBBBBB bbbb---"
+"--------|--.o-  X    c    X      X     |TTTTTTTTTTTTTTTT                    bbbb---"
+"-BBBBBBB|BBBBBXXX XXXXXXXXXXXXXX X     |--BBBB-----o----            TTTTTTTTTTTT---"
+"-       |       X   X   X    c   X     |--    ----------            ---------------"
+"-       |       XXX X X bX XXXXXXX     |--    BBBB------            ---------------"
+"-       TTTTTT bX      XX  X     X     |-B       |------            ---------------"
+"-b      BBBB--TTX XXX XXX XX XXX XT    TB   TTTTT|------            ---------------"
+"-OO         --.-X  bX  c     Xb  X-TTTTB   T-BBBB|BBBBBB           T---------------"
+"-           ----XX XXXXXXXXXXXXXXXBBBBB   T--    |                 ----------------"
+"- c    b               p      c          T---    X               TT----------------"
+"-TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT----TTTTTTTTTTTTTTTTTTTT------------------"
+"-----------------------------------------------------------------------------------"
 ])
+
+(def platform-map
+  [
+   "    "
+   " OTO"
+   "  B "])
+
+(def platform2-map
+  [
+   "    "
+   " XXX"])
 
 (defn make-tile-set [resource-key]
   (let [texture (r/get-texture resource-key :nearest)
