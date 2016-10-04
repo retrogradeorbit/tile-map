@@ -414,7 +414,7 @@
                               (vec2/add new-vel))
 
                   con-pos (-> new-pos
-                              (platform-constrain passable-fn (vec2/zero) con-pos old-pos)
+                              (platform-constrain passable-fn (vec2/zero) old-pos)
                               (platform-constrain platform-passable? platform-pos old-pos)
                               (platform-constrain platform2-passable? platform2-pos old-pos)
                               (platform-constrain platform2-passable? platform3-pos old-pos))
