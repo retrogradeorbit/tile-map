@@ -8,7 +8,7 @@
             [infinitelives.utils.vec2 :as vec2]
             [infinitelives.utils.console :refer [log]]
             [cljs.core.match :refer-macros [match]]
-
+            [clojure.string :as string]
             [tile-map.line :as line]
 )
   (:require-macros [cljs.core.async.macros :refer [go]]
