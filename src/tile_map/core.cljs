@@ -169,6 +169,29 @@
    (e/is-pressed? :space)
    (gp/button-pressed? 0 :x)))
 
+(def platforms
+  [
+   {:passable? platform-passable?
+    :pos-fn #(vec2/vec2 9 (+ 7 (* 2.01 (Math/sin (/ % 60)))))}
+
+   {:passable? platform2-passable?
+    :pos-fn #(vec2/vec2 56 (+ 23 (* 3 (Math/sin (/ % 60)))))}
+
+   {:passable? platform2-passable?
+    :pos-fn #(vec2/vec2 (+ 62 (* 3 (Math/sin (/ % 60))))
+                        20)}
+
+   ])
+
+(defn platform-constrain [pass? pos old-pos new-pos]
+  (line/constrain-offset
+   {:passable? pass?
+    :h-edge h-edge
+    :v-edge v-edge
+    :minus-h-edge minus-h-edge
+    :minus-v-edge minus-v-edge}
+   pos new-pos old-pos))
+
 (defonce main
   (go
     ;; load image tilesets
@@ -297,38 +320,13 @@
 
                   ;; simulate a little vertical move down to see if we are
                   ;; standing on solid ground
-                  fallen-pos (line/constrain {:passable? walkable?
-                                              :h-edge h-edge
-                                              :v-edge v-edge
-                                              :minus-h-edge minus-h-edge
-                                              :minus-v-edge minus-v-edge}
-                                             (vec2/add old-pos (vec2/vec2 0 0.1)) old-pos)
-
-                  fallen-pos (line/constrain-offset
-                              {:passable? platform-passable?
-                               :h-edge h-edge
-                               :v-edge v-edge
-                               :minus-h-edge minus-h-edge
-                               :minus-v-edge minus-v-edge}
-                              platform-pos
-                              fallen-pos old-pos)
-
-                  fallen-pos (line/constrain-offset
-                              {:passable? platform2-passable?
-                               :h-edge h-edge
-                               :v-edge v-edge
-                               :minus-h-edge minus-h-edge
-                               :minus-v-edge minus-v-edge}
-                              platform2-pos
-                              fallen-pos old-pos)
-                  fallen-pos (line/constrain-offset
-                              {:passable? platform2-passable?
-                               :h-edge h-edge
-                               :v-edge v-edge
-                               :minus-h-edge minus-h-edge
-                               :minus-v-edge minus-v-edge}
-                              platform3-pos
-                              fallen-pos old-pos)
+                  fallen-pos
+                  (->>
+                   (vec2/add old-pos (vec2/vec2 0 0.1))
+                   (platform-constrain walkable? (vec2/zero) old-pos)
+                   (platform-constrain platform-passable? platform-pos old-pos)
+                   (platform-constrain platform2-passable? platform2-pos old-pos)
+                   (platform-constrain platform2-passable? platform3-pos old-pos))
 
                   standing-on-ground? (> 0.06 (Math/abs (- (vec2/get-y fallen-pos) (vec2/get-y old-pos))))
 
@@ -434,7 +432,7 @@
                            platform2-pos
                            con-pos old-pos)
 
-                 con-pos (line/constrain-offset
+                  con-pos (line/constrain-offset
                            {:passable? platform2-passable?
                             :h-edge h-edge
                             :v-edge v-edge
