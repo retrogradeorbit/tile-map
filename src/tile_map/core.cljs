@@ -74,8 +74,9 @@
          "." [32 0]
          "o" [32 16]
          "X" [48 0]
-         "0" [48 16]
+         "0" [80 16]
          "/" [64 0]
+         "=" [80 0]
          "|" [64 16]
          "b" [0 32]
          "p" [16 32]
@@ -86,13 +87,38 @@
          (map (fn [[c pos]] [c (t/sub-texture texture pos [16 16])]))
          (into {}))))
 
+(defn make-foreground-map [bg-map-lines]
+  (map
+   (fn [line] (-> line
+                  (string/replace #"[ \-TBO.oX|bpc]" " ")
+                  (string/replace "/" "=")))
+   bg-map-lines)
+)
+
 (defn get-tile-at [x y]
   (nth (tile-map y) x))
+
+(defn get-platform-at [x y]
+  (nth (platform-map y) x))
 
 (defn not-passable? [x y]
   (#{"T" "-" "B" "O" "X"} (get-tile-at x y)))
 
 (def passable? (comp not not-passable?))
+
+(defn not-platform-passable? [x y]
+  (if (and (<= 0 x 3) (<= 0 y 2))
+    (#{"T" "-" "B" "O" "X"} (get-platform-at x y))
+    false))
+
+(def platform-passable? (comp not not-platform-passable?))
+
+(defn not-platform2-passable? [x y]
+  (if (and (<= 0 x 3) (<= 0 y 1))
+    (#{"T" "-" "B" "O" "X"} (get-platform-at x y))
+    false))
+
+(def platform2-passable? (comp not not-platform2-passable?))
 
 (defn walkable? [x y]
   (if (= "/" (get-tile-at x y))
@@ -158,18 +184,38 @@
           batch (js/PIXI.ParticleContainer.)
           stand (t/sub-texture (r/get-texture :tiles :nearest) [0 96] [16 16])
           walk (t/sub-texture (r/get-texture :tiles :nearest) [16 96] [16 16])
+          foreground-batch (js/PIXI.ParticleContainer.)
+          platform-batch (js/PIXI.ParticleContainer.)
+          platform2-batch (js/PIXI.ParticleContainer.)
+          platform3-batch (js/PIXI.ParticleContainer.)
 
           gravity (vec2/vec2 0 0.01)
           ]
       (add-tiles! batch tile-set tile-map)
+      (add-tiles! foreground-batch tile-set (into [] (make-foreground-map tile-map)))
       (s/set-scale! batch 4)
+      (s/set-scale! foreground-batch 4)
       (s/set-scale! bg 4)
+
+      (add-tiles! platform-batch tile-set platform-map)
+      (s/set-scale! platform-batch 4)
+      (add-tiles! platform2-batch tile-set platform2-map)
+      (s/set-scale! platform2-batch 4)
+      (add-tiles! platform3-batch tile-set platform2-map)
+      (s/set-scale! platform3-batch 4)
 
       ;; nearest
       (m/with-sprite canvas :tilemap
         [background bg
          tilemap batch
-         player (s/make-sprite stand :scale 4)]
+         platform platform-batch
+         platform2 platform2-batch
+         platform3 platform3-batch
+
+         player (s/make-sprite stand :scale 4)
+         foreground foreground-batch
+
+         ]
         (loop [
                state :walking
                fnum 0
@@ -199,11 +245,26 @@
                                          (e/is-pressed? :down) 1
                                          :default 0)
                                    ))
+
+                platform-pos (vec2/vec2 9 (+ 7 (* 2.01 (Math/sin (/ fnum 60)))))
+                platform2-pos (vec2/vec2 56 (+ 23 (* 3 (Math/sin (/ fnum 60)))))
+                platform3-pos (vec2/vec2 (+ 62 (* 3 (Math/sin (/ fnum 60))))
+                                         20)
                 ]
 
             (s/set-texture! player (if (zero? (mod (int (/ fnum 10)) 2)) stand walk))
             (set-player player (int x) (int y) px py)
             (s/set-pos! batch (int x) (int y))
+            (s/set-pos! platform (vec2/add
+                                  (vec2/scale platform-pos (* 4 16))
+                                  (vec2/vec2 x y)))
+            (s/set-pos! platform2 (vec2/add
+                                   (vec2/scale platform2-pos (* 4 16))
+                                   (vec2/vec2 x y)))
+            (s/set-pos! platform3 (vec2/add
+                                   (vec2/scale platform3-pos (* 4 16))
+                                   (vec2/vec2 x y)))
+            (s/set-pos! foreground (int x) (int y))
             (s/set-pos! background
                         (+ -2000 (mod (int (* x 0.90)) (* 4 32)))
                         (+ -2000 (mod (int (* y 0.90)) ( * 4 32))))
@@ -213,7 +274,6 @@
             (let [
                   square-on (get-tile-at pix piy)
                   square-below (get-tile-at pix (inc piy))
-
                   square-standing-on (get-tile-at pix
                                                   (int (+ 0.3 py)))
 
@@ -244,7 +304,33 @@
                                               :minus-v-edge minus-v-edge}
                                              (vec2/add old-pos (vec2/vec2 0 0.1)) old-pos)
 
-                  standing-on-ground? (= (vec2/get-y fallen-pos) (vec2/get-y old-pos))
+                  fallen-pos (line/constrain-offset
+                              {:passable? platform-passable?
+                               :h-edge h-edge
+                               :v-edge v-edge
+                               :minus-h-edge minus-h-edge
+                               :minus-v-edge minus-v-edge}
+                              platform-pos
+                              fallen-pos old-pos)
+
+                  fallen-pos (line/constrain-offset
+                              {:passable? platform2-passable?
+                               :h-edge h-edge
+                               :v-edge v-edge
+                               :minus-h-edge minus-h-edge
+                               :minus-v-edge minus-v-edge}
+                              platform2-pos
+                              fallen-pos old-pos)
+                  fallen-pos (line/constrain-offset
+                              {:passable? platform2-passable?
+                               :h-edge h-edge
+                               :v-edge v-edge
+                               :minus-h-edge minus-h-edge
+                               :minus-v-edge minus-v-edge}
+                              platform3-pos
+                              fallen-pos old-pos)
+
+                  standing-on-ground? (> 0.06 (Math/abs (- (vec2/get-y fallen-pos) (vec2/get-y old-pos))))
 
                   jump-pressed (cond
                                  (and (jump-button-pressed?) (zero? jump-pressed) standing-on-ground?) ;; cant jump off ladder! if you can, problem... when jumping off lader, state stays climbing causing no accel for the jump
@@ -313,8 +399,8 @@
                                (if on-ladder? state :walking))
 
                   passable-fn (if (= :walking next-state)
-                                             walkable?
-                                             passable?)
+                                walkable?
+                                passable?)
 
                   new-vel (-> old-vel
                               (vec2/set-y (if (= state :climbing) 0 (vec2/get-y old-vel)))
@@ -328,16 +414,60 @@
                   new-pos (-> old-pos
                               (vec2/add new-vel))
 
+                  con-pos new-pos
+
+                  con-pos (line/constrain-offset
+                           {:passable? platform-passable?
+                            :h-edge h-edge
+                            :v-edge v-edge
+                            :minus-h-edge minus-h-edge
+                            :minus-v-edge minus-v-edge}
+                           platform-pos
+                           con-pos old-pos)
+
+                  con-pos (line/constrain-offset
+                           {:passable? platform2-passable?
+                            :h-edge h-edge
+                            :v-edge v-edge
+                            :minus-h-edge minus-h-edge
+                            :minus-v-edge minus-v-edge}
+                           platform2-pos
+                           con-pos old-pos)
+
+                 con-pos (line/constrain-offset
+                           {:passable? platform2-passable?
+                            :h-edge h-edge
+                            :v-edge v-edge
+                            :minus-h-edge minus-h-edge
+                            :minus-v-edge minus-v-edge}
+                           platform3-pos
+                           con-pos old-pos)
+
                   con-pos (line/constrain {:passable? passable-fn
                                            :h-edge h-edge
                                            :v-edge v-edge
                                            :minus-h-edge minus-h-edge
                                            :minus-v-edge minus-v-edge}
-                                          new-pos old-pos)
+                                          con-pos old-pos)
+
+                  #_ (log (str platform-pos "," old-pos "," con-pos))
+
+                  ;; con-pos (line/constrain-offset
+                  ;;          {:passable?
+                  ;;           (fn [x y]
+                  ;;             (let [res (platform-passable? x y)]
+                  ;;                       ;(log "test:" x y "res:" res)
+                  ;;               res))
+                  ;;           :h-edge h-edge
+                  ;;           :v-edge v-edge
+                  ;;           :minus-h-edge minus-h-edge
+                  ;;           :minus-v-edge minus-v-edge}
+                  ;;          platform-pos
+                  ;;          con-pos old-pos)
 
 
                   #_ (log dy on-ladder? ladder-up? ladder-down? state state-ladder? next-state (str joy-acc) (str player-brake) ;(str new-vel) (vec2/get-y old-vel) (str old-pos "=>" con-pos)
-                       )
+                          )
 
 
 
@@ -345,7 +475,7 @@
                               (-> (vec2/sub con-pos old-pos)
                                   (vec2/set-y 0)))
 
-                  ;_ (log (str "!" old-vel))
+                                        ;_ (log (str "!" old-vel))
                   ]
               (if (< (vec2/get-x old-vel) 0)
                 (s/set-scale! player -4 4)
