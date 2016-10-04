@@ -319,7 +319,7 @@
                                    (= square-below "/"))
 
                   ;; simulate a little vertical move down to see if we are
-                  ;; standing on solid ground
+                  ;; standing on solid ground (or a platform)
                   fallen-pos
                   (->>
                    (vec2/add old-pos (vec2/vec2 0 0.1))
@@ -328,6 +328,9 @@
                    (platform-constrain platform2-passable? platform2-pos old-pos)
                    (platform-constrain platform2-passable? platform3-pos old-pos))
 
+                  ;; TODO: this is dodgy. We need to test with each platform.
+                  ;; if we are standing on a platform, we are "bound to it"
+                  ;; and we move where it does!
                   standing-on-ground? (> 0.06 (Math/abs (- (vec2/get-y fallen-pos) (vec2/get-y old-pos))))
 
                   jump-pressed (cond
@@ -339,8 +342,6 @@
 
                                  :default
                                  0)
-
-                                        ;_ (log "jump pressed" jump-pressed)
 
                   jump-force (if (and (<= 1 jump-pressed jump-frames)
                                       (jump-button-pressed?))
@@ -375,8 +376,6 @@
                             (vec2/vec2 joy-dx 0))
 
 
-                  #_ (log (str joy-acc))
-
                   player-vel-x (Math/abs (vec2/get-x old-vel))
 
                   ;; when moving quickly left and right, and the
@@ -401,9 +400,11 @@
                                 passable?)
 
                   new-vel (-> old-vel
+                              ;; zero any y vel in the last frames vel if we are climbing
                               (vec2/set-y (if (= state :climbing) 0 (vec2/get-y old-vel)))
+                              ;; no gravity on you when you are on the stairs
                               (vec2/add (if (= state :climbing) (vec2/zero) gravity))
-                              #_ (vec2/add gravity)
+
                               (vec2/add jump-force)
                               (vec2/add joy-acc)
                               (vec2/add (vec2/scale player-brake (/ player-vel-x 3)))
@@ -412,68 +413,15 @@
                   new-pos (-> old-pos
                               (vec2/add new-vel))
 
-                  con-pos new-pos
-
-                  con-pos (line/constrain-offset
-                           {:passable? platform-passable?
-                            :h-edge h-edge
-                            :v-edge v-edge
-                            :minus-h-edge minus-h-edge
-                            :minus-v-edge minus-v-edge}
-                           platform-pos
-                           con-pos old-pos)
-
-                  con-pos (line/constrain-offset
-                           {:passable? platform2-passable?
-                            :h-edge h-edge
-                            :v-edge v-edge
-                            :minus-h-edge minus-h-edge
-                            :minus-v-edge minus-v-edge}
-                           platform2-pos
-                           con-pos old-pos)
-
-                  con-pos (line/constrain-offset
-                           {:passable? platform2-passable?
-                            :h-edge h-edge
-                            :v-edge v-edge
-                            :minus-h-edge minus-h-edge
-                            :minus-v-edge minus-v-edge}
-                           platform3-pos
-                           con-pos old-pos)
-
-                  con-pos (line/constrain {:passable? passable-fn
-                                           :h-edge h-edge
-                                           :v-edge v-edge
-                                           :minus-h-edge minus-h-edge
-                                           :minus-v-edge minus-v-edge}
-                                          con-pos old-pos)
-
-                  #_ (log (str platform-pos "," old-pos "," con-pos))
-
-                  ;; con-pos (line/constrain-offset
-                  ;;          {:passable?
-                  ;;           (fn [x y]
-                  ;;             (let [res (platform-passable? x y)]
-                  ;;                       ;(log "test:" x y "res:" res)
-                  ;;               res))
-                  ;;           :h-edge h-edge
-                  ;;           :v-edge v-edge
-                  ;;           :minus-h-edge minus-h-edge
-                  ;;           :minus-v-edge minus-v-edge}
-                  ;;          platform-pos
-                  ;;          con-pos old-pos)
-
-
-                  #_ (log dy on-ladder? ladder-up? ladder-down? state state-ladder? next-state (str joy-acc) (str player-brake) ;(str new-vel) (vec2/get-y old-vel) (str old-pos "=>" con-pos)
-                          )
-
-
+                  con-pos (-> new-pos
+                              (platform-constrain passable-fn (vec2/zero) con-pos old-pos)
+                              (platform-constrain platform-passable? platform-pos old-pos)
+                              (platform-constrain platform2-passable? platform2-pos old-pos)
+                              (platform-constrain platform2-passable? platform3-pos old-pos))
 
                   old-vel (if (= :walking state) (vec2/sub con-pos old-pos)
                               (-> (vec2/sub con-pos old-pos)
                                   (vec2/set-y 0)))
-
-                                        ;_ (log (str "!" old-vel))
                   ]
               (if (< (vec2/get-x old-vel) 0)
                 (s/set-scale! player -4 4)
