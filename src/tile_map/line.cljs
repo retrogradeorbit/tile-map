@@ -111,7 +111,7 @@
                      x-fn y-fn
                      dy-v-fn
                      dx-h-fn]
-  (loop [x (int x0) y (int y0) s [[x y]]]
+  (loop [x (Math/floor x0) y (Math/floor y0) s [[x y]]]
     (if (and (= x (Math/floor x1)) (= y (Math/floor y1)))
       s
       (let [top-bottom-x (intersect-x x0 y0 x1 y1 (y-fn y))
@@ -139,8 +139,8 @@
           :default (assert false "cell-coverage fatal error!"))))))
 
 (defn cell-coverage-line-x [x0 y0 x1 y1 dx-fn]
-  (loop [x (int x0)
-         y (int y0)
+  (loop [x (Math/floor x0)
+         y (Math/floor y0)
          s [[x y]]]
     (if (= x (Math/floor x1))
       s
@@ -150,8 +150,8 @@
                (conj s [(dx-fn x) y]))))))
 
 (defn cell-coverage-line-y [x0 y0 x1 y1 dy-fn]
-  (loop [x (int x0)
-         y (int y0)
+  (loop [x (Math/floor x0)
+         y (Math/floor y0)
          s [[x y]]]
     (if (= y (Math/floor y1))
       s
@@ -173,7 +173,11 @@
          [1 _] (cell-coverage-line-x x0 y0 x1 y1 inc)
          [-1 _] (cell-coverage-line-x x0 y0 x1 y1 dec)
          [_ -1] (cell-coverage-line-y x0 y0 x1 y1 dec)
-         [_ 1] (cell-coverage-line-y x0 y0 x1 y1 inc)))
+         [_ 1] (cell-coverage-line-y x0 y0 x1 y1 inc)
+
+         ;; new and old identical
+         [0 0] [[(Math/floor x0) (Math/floor y0)]]
+         ))
 
 (defn vec2->parts [pos]
   (let [x (vec2/get-x pos)
@@ -316,7 +320,13 @@
             _ _ _]
            newpos)))
 
-(defn intersect-diag [x0 y0 x1 y1 x y x-fn y-fn]
+(defn intersect-diag
+  "casting a line from [x0 y0] to [x1 y1], as it intersects the
+  bounding square of cell [x y], where x-fn and y-fn identify which
+  edges of [x y] to check, find the earliest intersection with the
+  bounding square and return a vector specifying that intersection
+  position."
+  [x0 y0 x1 y1 x y x-fn y-fn]
   (let [top-x (intersect-x x0 y0 x1 y1 (y-fn y))
         left-y (intersect-y x0 y0 x1 y1 (x-fn x))]
     (cond (< x top-x (inc x))
@@ -327,17 +337,28 @@
           (< y left-y (inc y))
           (vec2/vec2 (x-fn x) left-y))))
 
-(defn intersect-compass-y[x0 y0 x1 y1 x y y-fn]
+(defn intersect-compass-y
+  "This is a faster form of intersect-diag that only works when the
+  line is cast entirely vertical in cell space. ie, some fine lateral
+  movement is allowed, but all the intersecting cells must be in a
+  straight, vertical stack"
+  [x0 y0 x1 y1 x y y-fn]
   (let [bottom-x (intersect-x x0 y0 x1 y1 (y-fn y))]
       (when (< x bottom-x (inc x))
         (vec2/vec2 bottom-x (y-fn y)))))
 
-(defn intersect-compass-x [x0 y0 x1 y1 x y x-fn]
+(defn intersect-compass-x
+  "Same as intersect-compass-y but in a horizontal direction"
+  [x0 y0 x1 y1 x y x-fn]
   (let [right-y (intersect-y x0 y0 x1 y1 (x-fn x))]
     (when (< y right-y (inc y))
       (vec2/vec2 (x-fn x) right-y))))
 
-(defn intersect [oldpos newpos x y]
+(defn intersect
+  "Given a movement of a point from oldpos to newpos,
+  calculate the exact position it intersects the outside
+  of tile [x y]"
+  [oldpos newpos x y]
   (let [[nx ny nix niy nfx nfy] (vec2->parts newpos)
         [ox oy oix oiy ofx ofy] (vec2->parts oldpos)]
     (match [(Math/sign (- nx ox)) (Math/sign (- ny oy))]
@@ -348,9 +369,15 @@
       [-1 _] (intersect-compass-x ox oy nx ny x y inc)
       [1 _] (intersect-compass-x ox oy nx ny x y identity)
       [_ -1] (intersect-compass-y ox oy nx ny x y inc)
-      [_ 1] (intersect-compass-y ox oy nx ny x y identity))))
+      [_ 1] (intersect-compass-y ox oy nx ny x y identity)
+      [0 0] (assert false "no movement!"))))
 
-(defn reject [oldpos newpos x y]
+(defn reject
+  "does the same as intersect, but instead of returning the exact
+  point of intersection, returns a point slightly 'before' it (on the
+  oldpos -> newpos line). Thus this point is garunteed to be in the
+  neighboring tile."
+  [oldpos newpos x y]
    (let [newpos (intersect oldpos newpos x y)]
      (-> (vec2/sub newpos oldpos)
         (vec2/scale 0.999)
@@ -365,7 +392,7 @@
         dy (- niy oiy)]
     (if (and (> 2 (Math/abs dx))
              (> 2 (Math/abs dy))
-             (> 2 (+ (Math/abs dx) (Math/abs dy)))    ;; cant jump through diagonals
+             (> 2 (+ (Math/abs dx) (Math/abs dy))) ;; cant jump through diagonals
              (passable? nix niy))
       ;; small +/- 1 tile horiz/vert movements
       ;; in an open square. apply edge contsraints
