@@ -126,16 +126,15 @@
     (passable? x y))
   )
 
-(defn add-tiles! [batch tile-set tile-map]
-  (doall
+(defn make-tiles [tile-set tile-map]
+  (filter identity
    (for [row (range (count tile-map))
          col (range (count (first tile-map)))]
      (let [char (nth (tile-map row) col)]
        (when (not= " " char)
-         (.addChild batch
-          (s/make-sprite (tile-set char)
-                         :x (* 16 col) :y (* 16 row)
-                         :xhandle 0 :yhandle 0)))))))
+         (s/make-sprite (tile-set char)
+                        :x (* 16 col) :y (* 16 row)
+                        :xhandle 0 :yhandle 0))))))
 
 (defonce canvas
   (c/init {:layers [:bg :tilemap :ui]
@@ -199,46 +198,47 @@
 
     ;; make the tile texture lookup
     (let [tile-set (make-tile-set :tiles)
-          bg (js/PIXI.TilingSprite.
-              (t/sub-texture
-               (r/get-texture :tiles :nearest)
-               [0 48] [32 32])
-              1000 1000)
-          batch (js/PIXI.ParticleContainer.)
           stand (t/sub-texture (r/get-texture :tiles :nearest) [0 96] [16 16])
           walk (t/sub-texture (r/get-texture :tiles :nearest) [16 96] [16 16])
-          foreground-batch (js/PIXI.ParticleContainer.)
-          platform-batch (js/PIXI.ParticleContainer.)
-          platform2-batch (js/PIXI.ParticleContainer.)
-          platform3-batch (js/PIXI.ParticleContainer.)
+          gravity (vec2/vec2 0 0.01)]
 
-          gravity (vec2/vec2 0 0.01)
-          ]
-      (add-tiles! batch tile-set tile-map)
-      (add-tiles! foreground-batch tile-set (into [] (make-foreground-map tile-map)))
-      (s/set-scale! batch 4)
-      (s/set-scale! foreground-batch 4)
-      (s/set-scale! bg 4)
-
-      (add-tiles! platform-batch tile-set platform-map)
-      (s/set-scale! platform-batch 4)
-      (add-tiles! platform2-batch tile-set platform2-map)
-      (s/set-scale! platform2-batch 4)
-      (add-tiles! platform3-batch tile-set platform2-map)
-      (s/set-scale! platform3-batch 4)
-
-      ;; nearest
+      ;; create sprite and tile map batches
       (m/with-sprite canvas :tilemap
-        [background bg
-         tilemap batch
-         platform platform-batch
-         platform2 platform2-batch
-         platform3 platform3-batch
-
+        [background (js/PIXI.TilingSprite.
+                     (t/sub-texture
+                      (r/get-texture :tiles :nearest)
+                      [0 48] [32 32])
+                     1000 1000)
+         tilemap (s/make-container
+                  :children (make-tiles tile-set tile-map)
+                  :xhandle 0 :yhandle 0
+                  :scale 4
+                  :particle true)
+         platform (s/make-container
+                          :children (make-tiles tile-set platform-map)
+                          :xhandle 0 :yhandle 0
+                          :scale 4
+                          :particle true)
+         platform2 (s/make-container
+                           :children (make-tiles tile-set platform2-map)
+                           :xhandle 0 :yhandle 0
+                           :scale 4
+                           :particle true)
+         platform3 (s/make-container
+                           :children (make-tiles tile-set platform2-map)
+                           :xhandle 0 :yhandle 0
+                           :scale 4
+                           :particle true)
          player (s/make-sprite stand :scale 4)
-         foreground foreground-batch
+         foreground (s/make-container
+                            :children (make-tiles tile-set
+                                                  (into [] (make-foreground-map tile-map)))
+                            :xhandle 0 :yhandle 0
+                            :scale 4
+                            :particle true)
 
          ]
+        (s/set-scale! background 4)
         (loop [
                state :walking
                fnum 0
@@ -277,7 +277,7 @@
 
             (s/set-texture! player (if (zero? (mod (int (/ fnum 10)) 2)) stand walk))
             (set-player player (int x) (int y) px py)
-            (s/set-pos! batch (int x) (int y))
+            (s/set-pos! tilemap (int x) (int y))
             (s/set-pos! platform (vec2/add
                                   (vec2/scale platform-pos (* 4 16))
                                   (vec2/vec2 x y)))
@@ -414,10 +414,10 @@
                               (vec2/add new-vel))
 
                   con-pos (->> new-pos
-                              (platform-constrain passable-fn (vec2/zero) old-pos)
-                              (platform-constrain platform-passable? platform-pos old-pos)
-                              (platform-constrain platform2-passable? platform2-pos old-pos)
-                              (platform-constrain platform2-passable? platform3-pos old-pos))
+                               (platform-constrain passable-fn (vec2/zero) old-pos)
+                               (platform-constrain platform-passable? platform-pos old-pos)
+                               (platform-constrain platform2-passable? platform2-pos old-pos)
+                               (platform-constrain platform2-passable? platform3-pos old-pos))
 
                   old-vel (if (= :walking state) (vec2/sub con-pos old-pos)
                               (-> (vec2/sub con-pos old-pos)
