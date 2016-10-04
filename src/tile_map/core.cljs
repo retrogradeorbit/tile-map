@@ -215,27 +215,26 @@
                   :scale 4
                   :particle true)
          platform (s/make-container
-                          :children (make-tiles tile-set platform-map)
-                          :xhandle 0 :yhandle 0
-                          :scale 4
-                          :particle true)
+                   :children (make-tiles tile-set platform-map)
+                   :xhandle 0 :yhandle 0
+                   :scale 4
+                   :particle true)
          platform2 (s/make-container
-                           :children (make-tiles tile-set platform2-map)
-                           :xhandle 0 :yhandle 0
-                           :scale 4
-                           :particle true)
+                    :children (make-tiles tile-set platform2-map)
+                    :xhandle 0 :yhandle 0
+                    :scale 4
+                    :particle true)
          platform3 (s/make-container
-                           :children (make-tiles tile-set platform2-map)
-                           :xhandle 0 :yhandle 0
-                           :scale 4
-                           :particle true)
+                    :children (make-tiles tile-set platform2-map)
+                    :xhandle 0 :yhandle 0
+                    :scale 4
+                    :particle true)
          player (s/make-sprite stand :scale 4)
          foreground (s/make-container
-                            :children (make-tiles tile-set
-                                                  (into [] (make-foreground-map tile-map)))
-                            :xhandle 0 :yhandle 0
-                            :scale 4
-                            :particle true)
+                     :children (make-tiles tile-set (into [] (make-foreground-map tile-map)))
+                     :xhandle 0 :yhandle 0
+                     :scale 4
+                     :particle true)
 
          ]
         (s/set-scale! background 4)
