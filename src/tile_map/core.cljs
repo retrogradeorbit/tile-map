@@ -66,7 +66,7 @@
    "    "
    " XXX"])
 
-(def state
+(def game-state
   (atom
    {:dynamite 10
     :gold 0}))
@@ -246,25 +246,33 @@
       (m/with-sprite :stats
         [dynamite-icon (s/make-sprite :dynamite-5 :scale 4
                                       :y -5)
-         dynamite (pf/make-text :numbers (str (:dynamite @state))
+         dynamite-text (pf/make-text :numbers (str (:dynamite @game-state))
                                 :scale 4 :xhandle 0
                                 :x 40)
 
          gold-icon (s/make-sprite :gold :scale 4
                                   :y -69)
-         gold (pf/make-text :numbers (str (:gold @state))
-                                :scale 4 :xhandle 0
-                                :x 40 :y -64)
+         gold-text (pf/make-text :numbers (str (:gold @game-state))
+                            :scale 4 :xhandle 0
+                            :x 40 :y -64)
 
          ]
-        (loop []
+        (loop [{:keys [dynamite gold]} @game-state]
           (<! (e/next-frame))
-          (recur))))
+          (when (not= (:gold @game-state) gold)
+            ;; change food num
+            (pf/change-text! gold-text :numbers (str (max 0 (int (:gold @game-state)))))
+            (s/update-handle! gold-text 0 0.5))
+          (when (not= (:dynamite @game-state) dynamite)
+            ;; change food num
+            (pf/change-text! dynamite-text :numbers (str (max 0 (int (:dynamite @game-state)))))
+            (s/update-handle! dynamite-text 0 0.5))
+          (recur @game-state))))
 
     (go
       (m/with-sprite :title
         [title (pf/make-text :pixel "DYNA-MINER 0.1"
-                                :scale 4 :xhandle 0)
+                             :scale 4 :xhandle 0.5)
 
          ]
         (loop []
@@ -319,6 +327,14 @@
                old-vel (vec2/vec2 0 0)
                ppos (vec2/vec2 1.5 4.5)
                jump-pressed 0]
+
+          ;; cheat keys
+          (when (e/is-pressed? :g)
+            (swap! game-state update :gold inc))
+
+          (when (e/is-pressed? :d)
+            (swap! game-state update :dynamite inc))
+
           (let [
                 old-pos ppos
                 pos (-> ppos
