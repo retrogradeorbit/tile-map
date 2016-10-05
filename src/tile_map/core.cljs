@@ -11,6 +11,7 @@
             [cljs.core.match :refer-macros [match]]
             [clojure.string :as string]
             [tile-map.line :as line]
+            [tile-map.map :as tm]
 )
   (:require-macros [cljs.core.async.macros :refer [go]]
                    [infinitelives.pixi.macros :as m]
