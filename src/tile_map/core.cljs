@@ -402,6 +402,9 @@
                   on-ladder? (or (= square-standing-on "|")
                                  (= square-standing-on "/"))
 
+                  on-gold? (= "b" square-standing-on)
+                  _ (when on-gold? (log "gold"))
+
                   ladder-up? (or (= square-standing-on "|")
                                  (= square-standing-on "/"))
 
