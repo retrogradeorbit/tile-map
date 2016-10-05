@@ -3,6 +3,7 @@
             [infinitelives.pixi.texture :as t]
             [infinitelives.pixi.canvas :as c]
             [infinitelives.pixi.sprite :as s]
+            [infinitelives.pixi.pixelfont :as pf]
             [infinitelives.utils.events :as e]
             [infinitelives.utils.gamepad :as gp]
             [infinitelives.utils.vec2 :as vec2]
@@ -12,7 +13,9 @@
             [tile-map.line :as line]
 )
   (:require-macros [cljs.core.async.macros :refer [go]]
-                   [infinitelives.pixi.macros :as m]))
+                   [infinitelives.pixi.macros :as m]
+                   [infinitelives.pixi.pixelfont :as pf]
+))
 
 (defonce bg-colour 0x202000)
 
@@ -63,6 +66,11 @@
    "    "
    " XXX"])
 
+(def state
+  (atom
+   {:dynamite 10
+    :gold 0}))
+
 (defn make-tile-set [resource-key]
   (let [texture (r/get-texture resource-key :nearest)
         tile-lookup
@@ -86,6 +94,24 @@
     (->> tile-lookup
          (map (fn [[c pos]] [c (t/sub-texture texture pos [16 16])]))
          (into {}))))
+
+(def sprite-sheet-layout
+  {
+   :dynamite-1 {:size [16 16] :pos [112 32]}
+   :dynamite-2 {:size [16 16] :pos [96 32]}
+   :dynamite-3 {:size [16 16] :pos [80 32]}
+   :dynamite-4 {:size [16 16] :pos [64 32]}
+   :dynamite-5 {:size [16 16] :pos [48 32]}
+
+   :explosion-1 {:size [16 16] :pos [48 48]}
+   :explosion-2 {:size [16 16] :pos [64 48]}
+   :explosion-3 {:size [16 16] :pos [80 48]}
+   :explosion-4 {:size [16 16] :pos [96 48]}
+   :explosion-5 {:size [16 16] :pos [112 48]}
+   :explosion-6 {:size [16 16] :pos [128 48]}
+
+   :gold {:size [16 16] :pos [0 32]}
+   })
 
 (defn make-foreground-map [bg-map-lines]
   (map
@@ -137,9 +163,15 @@
                         :xhandle 0 :yhandle 0))))))
 
 (defonce canvas
-  (c/init {:layers [:bg :tilemap :ui]
+  (c/init {:layers [:bg :tilemap :stats :title :ui]
            :background bg-colour
-           :expand true}))
+           :expand true
+           :origins {:stats :bottom-left
+                     :title :top}
+           :translate {:stats [40 -40]
+                       :title [0 40]}}))
+
+(s/set-default-scale! 1)
 
 (defn set-player [player x y px py]
   (s/set-pos!
@@ -195,6 +227,49 @@
   (go
     ;; load image tilesets
     (<! (r/load-resources canvas :ui ["img/tiles.png"]))
+
+    ;; load textures
+    (t/load-sprite-sheet! (r/get-texture :tiles) sprite-sheet-layout)
+
+    ;; make a number font
+    (pf/pixel-font :numbers "img/tiles.png" [0 128] [79 159]
+                   :chars "0123456789"
+                   :space 5)
+
+    ;; make a small pixelly font
+    (pf/pixel-font :pixel "img/tiles.png" [48 64] [120 83]
+                   :chars "ABCDEFGHIJKLMNOPQRSTUVWXYZ.!?0123456789+-$'\""
+                   :space 3)
+
+
+    (go
+      (m/with-sprite :stats
+        [dynamite-icon (s/make-sprite :dynamite-5 :scale 4
+                                      :y -5)
+         dynamite (pf/make-text :numbers (str (:dynamite @state))
+                                :scale 4 :xhandle 0
+                                :x 40)
+
+         gold-icon (s/make-sprite :gold :scale 4
+                                  :y -69)
+         gold (pf/make-text :numbers (str (:gold @state))
+                                :scale 4 :xhandle 0
+                                :x 40 :y -64)
+
+         ]
+        (loop []
+          (<! (e/next-frame))
+          (recur))))
+
+    (go
+      (m/with-sprite :title
+        [title (pf/make-text :pixel "DYNA-MINER 0.1"
+                                :scale 4 :xhandle 0)
+
+         ]
+        (loop []
+          (<! (e/next-frame))
+          (recur))))
 
     ;; make the tile texture lookup
     (let [tile-set (make-tile-set :tiles)
