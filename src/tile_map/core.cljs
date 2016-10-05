@@ -21,80 +21,62 @@
 (defonce bg-colour 0x202000)
 
 (def tile-map
-  [
-"-BBBBBBBBBBBBBBBBBBBBBBBXXXXXBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB-------------"
-"-                         b X                                     b   ---BBBBBB----"
-"-         c     OOOOXXXXXXXXX                               X/XXXXXX  --B      B---"
-"-       OOOO        X                       c                |        --        ---"
-"-                   X                    TTTT          p     |p  c    --        ---"
-"-    c              X                b   BBBB      TTTTTTOOOOOOOOOOOOOBB      TT---"
-"-OOOOOOOO           X               TTTT          T-                       TTT-----"
-"-                   X               ---B         OBB -BB-TT TTTTTTTTTTTTTTT--------"
-"-                   Xb   c    p     ---              -  --- -----------------BBBB--"
-"-                   XXX/XXXXXXXXXXXXBBB         OOOOOB  BBB ------------BBBBB   |--"
-"-            T      X  |                                    ------------bbbbbbb |--"
-"-           T-      X  |                                TTTT---BBBBB----TTTTTTT |--"
-"-TTTTTTTTTTT--OOOOO X  | XXXXX                          BBBBBBB     ----------- |--"
-"-BBBBB--.o----  bbb    |  0                      b                  ----BBBBBBB |--"
-"-     BB------TTTTTXX  XXXXX X X X            XXXXXXXX/X            ----        |--"
-"-       BBB--------Xpbb 0                             |   b b       ---- bbbbTTTT--"
-"-OOO/      BBBXXXXXXXXXXXX                          XXXXXXXXXXXX    ---- TTTT------"
-"-   |         Xbb     Xbb              /              |             ---- BBBBBBB---"
+  (-> [
+"------------------------XXXXX------------------------------------------------------"
+"-                         b X                                     b   -------------"
+"-         c     ----XXXXXXXXX                               X/XXXXXX  ---      ----"
+"-       ----        X                       c                |        --        ---"
+"-                   X                    ----          p     |p  c    --        ---"
+"-    c              X                b   ----      ---------------------      -----"
+"---------           X               ----          --                       --------"
+"-                   X               ----         --- ------ -----------------------"
+"-                   Xb   c    p     ---              -  --- -----------------------"
+"-                   XXX/XXXXXXXXXXXX---         ------  --- -----------------   |--"
+"-            -      X  |                                    ------------bbbbbbb |--"
+"-           --      X  |                                ----------------------- |--"
+"------------------- X  | XXXXX                          -------     ----------- |--"
+"--------.o----  bbb    |  0                      b                  ----------- |--"
+"-     -------------XX  XXXXX X X X            XXXXXXXX/X            ----        |--"
+"-       -----------Xpbb 0                             |   b b       ---- bbbb------"
+"----/      ---XXXXXXXXXXXX                          XXXXXXXXXXXX    ---- ----------"
+"-   |         Xbb     Xbb              /              |             ---- ----------"
 "-   |         XXXXXXX XXXXXXX X XX     |              |             ----        ---"
-"- p |     X   X   c      Xc      X     |              |             ----TTT bbbb---"
-"-TTTTTTT/TTTTTX XXXXXXX XXXXXX XXX     |     p        |             BBBBBBB bbbb---"
-"--------|--.o-  X    c    X      X     |TTTTTTTTTTTTTTTT                    bbbb---"
-"-BBBBBBB|BBBBBXXX XXXXXXXXXXXXXX X     |--BBBB-----o----            TTTTTTTTTTTT---"
+"- p |     X   X   c      Xc      X     |              |             ------- bbbb---"
+"--------/-----X XXXXXXX XXXXXX XXX     |     p        |             ------- bbbb---"
+"--------|--.o-  X    c    X      X     |----------------                    bbbb---"
+"--------|-----XXX XXXXXXXXXXXXXX X     |-----------o----            ---------------"
 "-       |       X   X   X    c   X     |--    ----------            ---------------"
-"-       |       XXX X X bX XXXXXXX     |--    BBBB------            ---------------"
-"-       TTTTTT bX      XX  X     X     |-B       |------            ---------------"
-"-b      BBBB--TTX XXX XXX XX XXX XT    TB   TTTTT|------            ---------------"
-"-OO         --.-X  bX  c     Xb  X-TTTTB   T-BBBB|BBBBBB           T---------------"
-"-           ----XX XXXXXXXXXXXXXXXBBBBB   T--    |                 ----------------"
-"- c    b               p      c          T---    X               TT----------------"
-"-TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT----TTTTTTTTTTTTTTTTTTTT------------------"
+"-       |       XXX X X bX XXXXXXX     |--    ----------            ---------------"
+"-       ------ bX      XX  X     X     |--       |------            ---------------"
+"-b      --------X XXX XXX XX XXX X-    --   -----|------            ---------------"
+"---         --.-X  bX  c     Xb  X------   ------|------           ----------------"
+"-           ----XX XXXXXXXXXXXXXXX-----   ---    |                 ----------------"
+"- c    b               p      c          ----    X               ------------------"
 "-----------------------------------------------------------------------------------"
-])
+"-----------------------------------------------------------------------------------"
+       ]
+      tm/strs->keymap tm/remap-keymap))
 
 (def platform-map
-  [
-   "    "
-   " OTO"
-   "  B "])
+  (->
+   [
+    "    "
+    " ---"
+    "  - "]
+   tm/strs->keymap tm/remap-keymap
+   ))
 
 (def platform2-map
-  [
-   "    "
-   " XXX"])
+  (->
+   [
+    "    "
+    " XXX"]
+   tm/strs->keymap tm/remap-keymap))
 
 (def game-state
   (atom
    {:dynamite 10
     :gold 0}))
-
-(defn make-tile-set [resource-key]
-  (let [texture (r/get-texture resource-key :nearest)
-        tile-lookup
-        {
-         "-" [0 0]
-         "T" [16 0]
-         "B" [0 16]
-         "O" [16 16]
-         "." [32 0]
-         "o" [32 16]
-         "X" [48 0]
-         "0" [80 16]
-         "/" [64 0]
-         "=" [80 0]
-         "|" [64 16]
-         "b" [0 32]
-         "p" [16 32]
-         "c" [32 32]
-         }
-        ]
-    (->> tile-lookup
-         (map (fn [[c pos]] [c (t/sub-texture texture pos [16 16])]))
-         (into {}))))
 
 (def sprite-sheet-layout
   {
@@ -115,53 +97,31 @@
    })
 
 (defn make-foreground-map [bg-map-lines]
-  (map
-   (fn [line] (-> line
-                  (string/replace #"[ \-TBO.oX|bpc]" " ")
-                  (string/replace "/" "=")))
-   bg-map-lines)
-)
-
-(defn get-tile-at [x y]
-  (nth (tile-map y) x))
-
-(defn get-platform-at [x y]
-  (nth (platform-map y) x))
+  (tm/mapv-mapv
+   bg-map-lines
+   (fn [c]
+     (cond
+       (= c :web) :web
+       (= c :ladder-top) :ladder-top-fg
+       :default :space))))
 
 (defn not-passable? [x y]
-  (#{"T" "-" "B" "O" "X"} (get-tile-at x y)))
+  (tm/not-passable? (tm/get-tile-at tile-map x y)))
 
 (def passable? (comp not not-passable?))
 
 (defn not-platform-passable? [x y]
-  (if (and (<= 0 x 3) (<= 0 y 2))
-    (#{"T" "-" "B" "O" "X"} (get-platform-at x y))
-    false))
+  (tm/not-passable? (tm/get-tile-at platform-map x y)))
 
 (def platform-passable? (comp not not-platform-passable?))
 
 (defn not-platform2-passable? [x y]
-  (if (and (<= 0 x 3) (<= 0 y 1))
-    (#{"T" "-" "B" "O" "X"} (get-platform-at x y))
-    false))
+  (tm/not-passable? (tm/get-tile-at platform2-map x y)))
 
 (def platform2-passable? (comp not not-platform2-passable?))
 
 (defn walkable? [x y]
-  (if (= "/" (get-tile-at x y))
-    false
-    (passable? x y))
-  )
-
-(defn make-tiles [tile-set tile-map]
-  (filter identity
-   (for [row (range (count tile-map))
-         col (range (count (first tile-map)))]
-     (let [char (nth (tile-map row) col)]
-       (when (not= " " char)
-         (s/make-sprite (tile-set char)
-                        :x (* 16 col) :y (* 16 row)
-                        :xhandle 0 :yhandle 0))))))
+  (tm/walkable? (tm/get-tile-at tile-map x y)))
 
 (defonce canvas
   (c/init {:layers [:bg :tilemap :stats :title :ui]
@@ -248,14 +208,14 @@
         [dynamite-icon (s/make-sprite :dynamite-5 :scale 4
                                       :y -5)
          dynamite-text (pf/make-text :numbers (str (:dynamite @game-state))
-                                :scale 4 :xhandle 0
-                                :x 40)
+                                     :scale 4 :xhandle 0
+                                     :x 40)
 
          gold-icon (s/make-sprite :gold :scale 4
                                   :y -69)
          gold-text (pf/make-text :numbers (str (:gold @game-state))
-                            :scale 4 :xhandle 0
-                            :x 40 :y -64)
+                                 :scale 4 :xhandle 0
+                                 :x 40 :y -64)
 
          ]
         (loop [{:keys [dynamite gold]} @game-state]
@@ -281,7 +241,7 @@
           (recur))))
 
     ;; make the tile texture lookup
-    (let [tile-set (make-tile-set :tiles)
+    (let [tile-set (tm/make-tile-set :tiles)
           stand (t/sub-texture (r/get-texture :tiles :nearest) [0 96] [16 16])
           walk (t/sub-texture (r/get-texture :tiles :nearest) [16 96] [16 16])
           gravity (vec2/vec2 0 0.01)]
@@ -294,28 +254,28 @@
                       [0 48] [32 32])
                      1000 1000)
          tilemap (s/make-container
-                  :children (make-tiles tile-set tile-map)
+                  :children (tm/make-tiles tile-set tile-map)
                   :xhandle 0 :yhandle 0
                   :scale 4
                   :particle true)
          platform (s/make-container
-                   :children (make-tiles tile-set platform-map)
+                   :children (tm/make-tiles tile-set platform-map)
                    :xhandle 0 :yhandle 0
                    :scale 4
                    :particle true)
          platform2 (s/make-container
-                    :children (make-tiles tile-set platform2-map)
+                    :children (tm/make-tiles tile-set platform2-map)
                     :xhandle 0 :yhandle 0
                     :scale 4
                     :particle true)
          platform3 (s/make-container
-                    :children (make-tiles tile-set platform2-map)
+                    :children (tm/make-tiles tile-set platform2-map)
                     :xhandle 0 :yhandle 0
                     :scale 4
                     :particle true)
          player (s/make-sprite stand :scale 4)
          foreground (s/make-container
-                     :children (make-tiles tile-set (into [] (make-foreground-map tile-map)))
+                     :children (tm/make-tiles tile-set (into [] (make-foreground-map tile-map)))
                      :xhandle 0 :yhandle 0
                      :scale 4
                      :particle true)
@@ -386,31 +346,22 @@
             (<! (e/next-frame))
                                         ;(log dy minus-v-edge)
             (let [
-                  square-on (get-tile-at pix piy)
-                  square-below (get-tile-at pix (inc piy))
-                  square-standing-on (get-tile-at pix
-                                                  (int (+ 0.3 py)))
+                  square-on (tm/get-tile-at tile-map pix piy)
+                  square-below (tm/get-tile-at tile-map pix (inc piy))
+                  square-standing-on (tm/get-tile-at tile-map pix
+                                                     (int (+ 0.3 py)))
 
-                  on-ladder-transition? (and
-                                         (or (= square-on "|")
-                                             (= square-on "/")
-                                        ;(= square-below "|")
-                                             (= square-below "/")
-                                             ))
+                  on-ladder-transition? (or (= square-on :ladder)
+                                            (= square-on :ladder-top)
+                                            (= square-below :ladder-top))
 
+                  on-ladder? (#{:ladder :ladder-top} square-standing-on)
 
-
-                  on-ladder? (or (= square-standing-on "|")
-                                 (= square-standing-on "/"))
-
-                  on-gold? (= "b" square-standing-on)
+                  on-gold? (= :gold square-standing-on)
                   _ (when on-gold? (log "gold"))
 
-                  ladder-up? (or (= square-standing-on "|")
-                                 (= square-standing-on "/"))
-
-                  ladder-down? (or (= square-below "|")
-                                   (= square-below "/"))
+                  ladder-up? (#{:ladder :ladder-top} square-standing-on)
+                  ladder-down? (#{:ladder :ladder-top} square-below)
 
                   ;; simulate a little vertical move down to see if we are
                   ;; standing on solid ground (or a platform)

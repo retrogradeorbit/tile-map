@@ -2,43 +2,8 @@
   (:require [infinitelives.utils.console :refer [log]]
             [infinitelives.pixi.resources :as r]
             [infinitelives.pixi.texture :as t]
+            [infinitelives.pixi.sprite :as s]
             [cljs.core.match :refer-macros [match]]))
-
-(def tile-map
-  [
-"------------------------XXXXX------------------------------------------------------"
-"-                         b X                                     b   -------------"
-"-         c     ----XXXXXXXXX                               X/XXXXXX  ---      ----"
-"-       ----        X                       c                |        --        ---"
-"-                   X                    ----          p     |p  c    --        ---"
-"-    c              X                b   ----      ---------------------      -----"
-"---------           X               ----          --                       --------"
-"-                   X               ----         --- ------ -----------------------"
-"-                   Xb   c    p     ---              -  --- -----------------------"
-"-                   XXX/XXXXXXXXXXXX---         ------  --- -----------------   |--"
-"-            -      X  |                                    ------------bbbbbbb |--"
-"-           --      X  |                                ----------------------- |--"
-"------------------- X  | XXXXX                          -------     ----------- |--"
-"--------.o----  bbb    |  0                      b                  ----------- |--"
-"-     -------------XX  XXXXX X X X            XXXXXXXX/X            ----        |--"
-"-       -----------Xpbb 0                             |   b b       ---- bbbb------"
-"----/      ---XXXXXXXXXXXX                          XXXXXXXXXXXX    ---- ----------"
-"-   |         Xbb     Xbb              /              |             ---- ----------"
-"-   |         XXXXXXX XXXXXXX X XX     |              |             ----        ---"
-"- p |     X   X   c      Xc      X     |              |             ------- bbbb---"
-"--------/-----X XXXXXXX XXXXXX XXX     |     p        |             ------- bbbb---"
-"--------|--.o-  X    c    X      X     |----------------                    bbbb---"
-"--------|-----XXX XXXXXXXXXXXXXX X     |-----------o----            ---------------"
-"-       |       X   X   X    c   X     |--    ----------            ---------------"
-"-       |       XXX X X bX XXXXXXX     |--    ----------            ---------------"
-"-       ------ bX      XX  X     X     |--       |------            ---------------"
-"-b      --------X XXX XXX XX XXX X-    --   -----|------            ---------------"
-"---         --.-X  bX  c     Xb  X------   ------|------           ----------------"
-"-           ----XX XXXXXXXXXXXXXXX-----   ---    |                 ----------------"
-"- c    b               p      c          ----    X               ------------------"
-"-----------------------------------------------------------------------------------"
-"-----------------------------------------------------------------------------------"
-])
 
 (defn key-for [c]
   (case c
@@ -79,7 +44,7 @@
          :dirt-bottom
 
          ;; put top dirt tiles at the top edges
-         [(tile :guard #{:stone :ladder-top :ladder :crate :pot :web :space}) :dirt _]
+         [(t :guard #{:stone :ladder-top :ladder :crate :pot :web :space}) :dirt _]
          :dirt-top
 
          ;; default: dont change tile
@@ -128,6 +93,17 @@
     (->> tile-lookup
          (map (fn [[c pos]] [c (t/sub-texture texture pos [16 16])]))
          (into {}))))
+
+(defn make-tiles [tile-set tile-map]
+  (filter identity
+   (for [row (range (count tile-map))
+         col (range (count (first tile-map)))]
+     (let [char (nth (tile-map row) col)]
+       (when (not= :space char)
+         (s/make-sprite (tile-set char)
+                        :x (* 16 col) :y (* 16 row)
+                        :xhandle 0 :yhandle 0))))))
+
 
 (let [tm (remap-keymap
           (change-cell
