@@ -209,13 +209,13 @@
                                       :y -5)
          dynamite-text (pf/make-text :numbers (str (:dynamite @game-state))
                                      :scale 4 :xhandle 0
-                                     :x 40)
+                                     :x 50)
 
          gold-icon (s/make-sprite :gold :scale 4
                                   :y -69)
          gold-text (pf/make-text :numbers (str (:gold @game-state))
                                  :scale 4 :xhandle 0
-                                 :x 40 :y -64)
+                                 :x 50 :y -64)
 
          ]
         (loop [{:keys [dynamite gold]} @game-state]
@@ -244,7 +244,10 @@
     (let [tile-set (tm/make-tile-set :tiles)
           stand (t/sub-texture (r/get-texture :tiles :nearest) [0 96] [16 16])
           walk (t/sub-texture (r/get-texture :tiles :nearest) [16 96] [16 16])
-          gravity (vec2/vec2 0 0.01)]
+          gravity (vec2/vec2 0 0.01)
+
+          tilemap-order-lookup (tm/make-tiles-struct tile-set tile-map)
+          ]
 
       ;; create sprite and tile map batches
       (m/with-sprite canvas :tilemap
@@ -358,7 +361,14 @@
                   on-ladder? (#{:ladder :ladder-top} square-standing-on)
 
                   on-gold? (= :gold square-standing-on)
-                  _ (when on-gold? (log "gold"))
+                  ;on-gold? (e/is-pressed? :q)
+                  _ (when on-gold?
+                      ;(log "gold" pix piy (tilemap-order-lookup [pix piy]))
+                      (when (tilemap-order-lookup [pix piy])
+                        (let [child (.getChildAt tilemap (tilemap-order-lookup [pix piy]))]
+                          (when (= 1 (.-alpha child))
+                            (s/set-alpha! child 0)
+                            (swap! game-state update :gold inc)))))
 
                   ladder-up? (#{:ladder :ladder-top} square-standing-on)
                   ladder-down? (#{:ladder :ladder-top} square-below)

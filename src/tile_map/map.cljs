@@ -105,14 +105,17 @@
                         :xhandle 0 :yhandle 0))))))
 
 
-(let [tm (remap-keymap
-          (change-cell
-           (strs->keymap tile-map)
-           [0 0] :foo))]
-  (log (str
-        tm
-        "---"
-        (mapv-mapv
-         tm
-         passable?
-         ))))
+(defn make-tiles-struct [tile-set tile-map]
+  (into {}
+        (let [sprites
+              (filter identity
+                      (for [row (range (count tile-map))
+                            col (range (count (first tile-map)))]
+                        (let [char (nth (tile-map row) col)]
+                          (when (not= :space char)
+                            [col row]))))]
+          (map
+           (fn [n [x y]]
+             [[x y] n])
+           (range)
+           sprites))))
