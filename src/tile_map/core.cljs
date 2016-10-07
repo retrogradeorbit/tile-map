@@ -363,13 +363,18 @@
 
                   on-gold? (= :gold square-standing-on)
                   ;on-gold? (e/is-pressed? :q)
-                  _ (when on-gold?
-                      ;(log "gold" pix piy (tilemap-order-lookup [pix piy]))
-                      (when (tilemap-order-lookup [pix piy])
-                        (let [child (.getChildAt tilemap (tilemap-order-lookup [pix piy]))]
-                          (when (= 1 (.-alpha child))
-                            (s/set-alpha! child 0)
-                            (swap! game-state update :gold inc)))))
+                  new-gold (or
+                     (when on-gold?
+                                        ;(log "gold" pix piy (tilemap-order-lookup [pix piy]))
+                          (when (tilemap-order-lookup [pix piy])
+                            (let [child (.getChildAt tilemap (tilemap-order-lookup [pix piy]))]
+                              (when (= 1 (.-alpha child))
+                                (s/set-alpha! child 0)
+                                (>! gold (inc gold-num))
+                                (inc gold-num)))))
+                     gold-num)
+
+                  new-dynamite dynamite
 
                   ladder-up? (#{:ladder :ladder-top} square-standing-on)
                   ladder-down? (#{:ladder :ladder-top} square-below)
@@ -489,4 +494,6 @@
                old-vel
                con-pos
                jump-pressed
+               new-gold
+               new-dynamite
                ))))))))
