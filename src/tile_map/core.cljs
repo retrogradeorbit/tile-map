@@ -12,6 +12,7 @@
             [clojure.string :as string]
             [tile-map.line :as line]
             [tile-map.map :as tm]
+            [cljs.core.async :refer [chan close! >! <!]]
 )
   (:require-macros [cljs.core.async.macros :refer [go]]
                    [infinitelives.pixi.macros :as m]
@@ -183,6 +184,26 @@
     :minus-h-edge minus-h-edge
     :minus-v-edge minus-v-edge}
    pos new-pos old-pos))
+
+(defn make-text-display
+  "create an updating number display with icon. Used for gold/dynamite etc.
+  icon and text appeads at `y` with font `font` displaying string `s`.
+  returns a channel. When you push a value down the channel, the
+  display will update to that pushed value. When you close! the channel,
+  the text disappears.
+  "
+  [icon y font s]
+  (let [c (chan)]
+    (go
+      (m/with-sprite :stats
+        [icon (s/make-sprite icon :scale 4 :y (+ y -5))
+         text (pf/make-text font s :scale 4 :xhandle 0 :x 50 :y y)]
+        (loop [s (<! c)]
+          (pf/change-text! text font (str s))
+          (s/update-handle! text 0 0.5)
+          (when-let [res (<! c)]
+            (recur res)))))
+    c))
 
 (defonce main
   (go
