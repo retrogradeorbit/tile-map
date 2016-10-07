@@ -286,14 +286,19 @@
                fnum 0
                old-vel (vec2/vec2 0 0)
                ppos (vec2/vec2 1.5 4.5)
-               jump-pressed 0]
+               jump-pressed 0
+               gold-num 0
+               dynamite-num 0]
 
           ;; cheat keys
-          (when (e/is-pressed? :g)
-            (swap! game-state update :gold inc))
+          ;; (when (e/is-pressed? :g)
+          ;;   (>! gold (:gold (swap! game-state update :gold inc))))
 
-          (when (e/is-pressed? :d)
-            (swap! game-state update :dynamite inc))
+          ;; (when (e/is-pressed? :f)
+          ;;   (close! gold))
+
+          ;; (when (e/is-pressed? :d)
+          ;;   (>! dynamite (:dynamite (swap! game-state update :dynamite inc))))
 
           (let [
                 old-pos ppos
