@@ -74,11 +74,6 @@
     " XXX"]
    tm/strs->keymap tm/remap-keymap))
 
-(def game-state
-  (atom
-   {:dynamite 10
-    :gold 0}))
-
 (def sprite-sheet-layout
   {
    :dynamite-1 {:size [16 16] :pos [112 32]}
