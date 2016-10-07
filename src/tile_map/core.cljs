@@ -223,34 +223,6 @@
                    :chars "ABCDEFGHIJKLMNOPQRSTUVWXYZ.!?0123456789+-$'\""
                    :space 3)
 
-
-    (go
-      (m/with-sprite :stats
-        [dynamite-icon (s/make-sprite :dynamite-5 :scale 4
-                                      :y -5)
-         dynamite-text (pf/make-text :numbers (str (:dynamite @game-state))
-                                     :scale 4 :xhandle 0
-                                     :x 50)
-
-         gold-icon (s/make-sprite :gold :scale 4
-                                  :y -69)
-         gold-text (pf/make-text :numbers (str (:gold @game-state))
-                                 :scale 4 :xhandle 0
-                                 :x 50 :y -64)
-
-         ]
-        (loop [{:keys [dynamite gold]} @game-state]
-          (<! (e/next-frame))
-          (when (not= (:gold @game-state) gold)
-            ;; change food num
-            (pf/change-text! gold-text :numbers (str (max 0 (int (:gold @game-state)))))
-            (s/update-handle! gold-text 0 0.5))
-          (when (not= (:dynamite @game-state) dynamite)
-            ;; change food num
-            (pf/change-text! dynamite-text :numbers (str (max 0 (int (:dynamite @game-state)))))
-            (s/update-handle! dynamite-text 0 0.5))
-          (recur @game-state))))
-
     (go
       (m/with-sprite :title
         [title (pf/make-text :pixel "DYNA-MINER 0.1"
@@ -268,6 +240,9 @@
           gravity (vec2/vec2 0 0.01)
 
           tilemap-order-lookup (tm/make-tiles-struct tile-set tile-map)
+
+          dynamite (make-text-display :dynamite-5 0 :numbers "0")
+          gold (make-text-display :gold -64 :numbers "0")
           ]
 
       ;; create sprite and tile map batches
