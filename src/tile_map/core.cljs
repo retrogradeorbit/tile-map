@@ -192,7 +192,7 @@
     (go
       (m/with-sprite :stats
         [icon (s/make-sprite icon :scale 4 :y (+ y -5))
-         text (pf/make-text font s :scale 4 :xhandle 0 :x 50 :y y)]
+         text (pf/make-text font (str s) :scale 4 :xhandle 0 :x 50 :y y)]
         (loop [s (<! c)]
           (pf/change-text! text font (str s))
           (s/update-handle! text 0 0.5)
@@ -236,8 +236,8 @@
 
           tilemap-order-lookup (tm/make-tiles-struct tile-set tile-map)
 
-          dynamite (make-text-display :dynamite-5 0 :numbers "0")
-          gold (make-text-display :gold -64 :numbers "0")
+          dynamite (make-text-display :dynamite-5 0 :numbers 0)
+          gold (make-text-display :gold -64 :numbers 0)
           ]
 
       ;; create sprite and tile map batches
@@ -284,16 +284,6 @@
                jump-pressed 0
                gold-num 0
                dynamite-num 0]
-
-          ;; cheat keys
-          ;; (when (e/is-pressed? :g)
-          ;;   (>! gold (:gold (swap! game-state update :gold inc))))
-
-          ;; (when (e/is-pressed? :f)
-          ;;   (close! gold))
-
-          ;; (when (e/is-pressed? :d)
-          ;;   (>! dynamite (:dynamite (swap! game-state update :dynamite inc))))
 
           (let [
                 old-pos ppos
