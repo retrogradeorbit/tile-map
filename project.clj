@@ -60,7 +60,7 @@
                            ;:pseudo-names true
                            ;:pretty-print true
 
-                           :pretty-print true
+                           :pretty-print false
                            }}]}
 
   :figwheel { ;; :http-server-root "public" ;; default and assumes "resources"
