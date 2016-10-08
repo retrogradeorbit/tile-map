@@ -55,9 +55,15 @@
                 :compiler {:output-to "build/js/compiled/tile_map.js"
                            :main tile-map.core
                            :optimizations :advanced
-                           :pretty-print false}}]}
+                           :externs ["externs/w3c_audio.js" "externs/w3c_gamepad.js" "externs/pixi.ext.js"]
 
-  :figwheel {;; :http-server-root "public" ;; default and assumes "resources"
+                           ;:pseudo-names true
+                           ;:pretty-print true
+
+                           :pretty-print true
+                           }}]}
+
+  :figwheel { ;; :http-server-root "public" ;; default and assumes "resources"
              ;; :server-port 3449 ;; default
              ;; :server-ip "127.0.0.1"
 
