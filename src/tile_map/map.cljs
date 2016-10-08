@@ -36,15 +36,15 @@
 (defn remap [y-1 y y+1]
   (match [y-1 y y+1]
          ;; put top-bottom dirt tiles where the dirt is solo
-         [(t :guard #{:stone :ladder-top :ladder :crate :pot :web :space}) :dirt (b :guard #{:stone :ladder-top :ladder :crate :pot :web :space})]
+         [(t :guard #{:stone :ladder-top :ladder :crate :pot :web :space :gold}) :dirt (b :guard #{:stone :ladder-top :ladder :crate :pot :web :space})]
          :dirt-top-bottom
 
          ;; put bottom dirt tiles where the dirt ends
-         [_ :dirt (t :guard #{:stone :ladder-top :ladder :crate :pot :web :space})]
+         [_ :dirt (t :guard #{:stone :ladder-top :ladder :crate :pot :web :space :gold})]
          :dirt-bottom
 
          ;; put top dirt tiles at the top edges
-         [(t :guard #{:stone :ladder-top :ladder :crate :pot :web :space}) :dirt _]
+         [(t :guard #{:stone :ladder-top :ladder :crate :pot :web :space :gold}) :dirt _]
          :dirt-top
 
          ;; default: dont change tile
