@@ -360,7 +360,9 @@
                jump-pressed 0
                gold-num 0
                dynamite-num 10
-               last-x-pressed? (e/is-pressed? :x)]
+               last-x-pressed? (e/is-pressed? :x)
+               facing :left
+               ]
 
           (let [
                 old-pos ppos
@@ -399,7 +401,10 @@
                 platform3-delta (vec2/sub platform3-pos old-platform3-pos)
                 ]
 
-            (s/set-texture! player (if (zero? (mod (int (/ fnum 10)) 2)) stand walk))
+            (s/set-texture! player
+                            (if (> (Math/abs (vec2/get-x joy)) 0.02)
+                              (if (zero? (mod (int (/ fnum 10)) 2)) stand walk)
+                              stand))
             (set-player player (int x) (int y) px py)
             (s/set-pos! tilemap (int x) (int y))
             (s/set-pos! dynamites (int x) (int y))
@@ -581,9 +586,9 @@
                         (dec new-dynamite))
                     new-dynamite)
                   ]
-              (if (< (vec2/get-x old-vel) 0)
-                (s/set-scale! player -4 4)
-                (s/set-scale! player 4 4)
+              (case facing
+                :left (s/set-scale! player -4 4)
+                :right (s/set-scale! player 4 4)
                 )
 
               (recur
@@ -595,4 +600,9 @@
                new-gold
                new-dynamite
                (e/is-pressed? :x)
+               (case (Math/sign joy-dx)
+                 -1 :left
+                 0 facing
+                 1 :right
+                 )
                ))))))))
