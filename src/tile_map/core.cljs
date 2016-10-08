@@ -180,6 +180,23 @@
     :minus-v-edge minus-v-edge}
    pos new-pos old-pos))
 
+(defn which-platform? [old-pos platform-pos platform2-pos platform3-pos]
+  (let [start old-pos
+        end1 (vec2/add old-pos (vec2/vec2 0 0.1))
+        end2 (vec2/add old-pos (vec2/vec2 0 0.3))
+        plats [[walkable? (vec2/zero)]
+               [platform-passable? platform-pos]
+               [platform2-passable? platform2-pos]
+               [platform2-passable? platform3-pos]]
+        ]
+    (loop [n 0]
+      (let [[test? vel] (nth plats n)]
+        (if (= (vec2/get-y (platform-constrain test? vel start end1))
+               (vec2/get-y (platform-constrain test? vel start end2)))
+          n
+          (when (< n 3)
+            (recur (inc n))))))))
+
 (defn make-text-display
   "create an updating number display with icon. Used for gold/dynamite etc.
   icon and text appeads at `y` with font `font` displaying string `s`.
