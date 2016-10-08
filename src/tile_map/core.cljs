@@ -200,6 +200,9 @@
             (recur res)))))
     c))
 
+(defn platform2-fn [fnum] (vec2/vec2 (+ 56 (* 3 (Math/sin (/ fnum 40))))
+                                     (+ 23 (* 3 (Math/sin (/ fnum 40))))))
+
 (defonce main
   (go
     ;; load image tilesets
@@ -310,9 +313,16 @@
                                    ))
 
                 platform-pos (vec2/vec2 9 (+ 7 (* 2.01 (Math/sin (/ fnum 60)))))
-                platform2-pos (vec2/vec2 56 (+ 23 (* 3 (Math/sin (/ fnum 60)))))
-                platform3-pos (vec2/vec2 (+ 62 (* 3 (Math/sin (/ fnum 60))))
-                                         20)
+                old-platform-pos (vec2/vec2 9 (+ 7 (* 2.01 (Math/sin (/ (dec fnum) 60)))))
+                platform-delta (vec2/sub platform-pos old-platform-pos)
+
+                platform2-pos (platform2-fn fnum)
+                old-platform2-pos (platform2-fn (dec fnum))
+                platform2-delta (vec2/sub platform2-pos old-platform2-pos)
+
+                platform3-pos (vec2/vec2 (+ 62 (* 3 (Math/sin (/ fnum 60)))) 20)
+                old-platform3-pos (vec2/vec2 (+ 62 (* 3 (Math/sin (/ (dec fnum) 60)))) 20)
+                platform3-delta (vec2/sub platform3-pos old-platform3-pos)
                 ]
 
             (s/set-texture! player (if (zero? (mod (int (/ fnum 10)) 2)) stand walk))
@@ -347,22 +357,53 @@
                   on-ladder? (#{:ladder :ladder-top} square-standing-on)
 
                   on-gold? (= :gold square-standing-on)
-                  ;on-gold? (e/is-pressed? :q)
                   new-gold (or
-                     (when on-gold?
+                            (when on-gold?
                                         ;(log "gold" pix piy (tilemap-order-lookup [pix piy]))
-                          (when (tilemap-order-lookup [pix piy])
-                            (let [child (.getChildAt tilemap (tilemap-order-lookup [pix piy]))]
-                              (when (= 1 (.-alpha child))
-                                (s/set-alpha! child 0)
-                                (>! gold (inc gold-num))
-                                (inc gold-num)))))
-                     gold-num)
+                              (when (tilemap-order-lookup [pix piy])
+                                (let [child (.getChildAt tilemap (tilemap-order-lookup [pix piy]))]
+                                  (when (= 1 (.-alpha child))
+                                    (s/set-alpha! child 0)
+                                    (>! gold (inc gold-num))
+                                    (inc gold-num)))))
+                            gold-num)
 
                   new-dynamite dynamite
 
                   ladder-up? (#{:ladder :ladder-top} square-standing-on)
                   ladder-down? (#{:ladder :ladder-top} square-below)
+
+                  ;; work out if we are standing on a platform, and if
+                  ;; so, which one?  to do this, we simulate the
+                  ;; player falling every so slightly by a small
+                  ;; amount and by a larger amount. we then constrain
+                  ;; both these movements by the platform in
+                  ;; question. If the y value is the same between the
+                  ;; two end points, then we are standing on the
+                  ;; platform (even if platform is moving!)
+                  plat (let [start old-pos
+                             end1 (vec2/add old-pos (vec2/vec2 0 0.1))
+                             end2 (vec2/add old-pos (vec2/vec2 0 0.3))
+
+                             platform-tests
+                             (for [[test? vel] [[walkable? (vec2/zero)]
+                                                [platform-passable? platform-pos]
+                                                [platform2-passable? platform2-pos]
+                                                [platform2-passable? platform3-pos]]]
+                               (= (vec2/get-y (platform-constrain test? vel start end1))
+                                  (vec2/get-y (platform-constrain test? vel start end2))))
+                             indexed-tests (map vector (range) platform-tests)
+                             matching-indexed-tests (map first (filter second indexed-tests))
+                             ]
+                         (first matching-indexed-tests))
+
+                  ;; move oldpos by platform movement
+                  old-pos (case plat
+                            0 old-pos
+                            1 (vec2/add old-pos platform-delta)
+                            2 (vec2/add old-pos platform2-delta)
+                            3 (vec2/add old-pos platform3-delta)
+                            nil old-pos)
 
                   ;; simulate a little vertical move down to see if we are
                   ;; standing on solid ground (or a platform)
