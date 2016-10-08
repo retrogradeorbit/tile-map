@@ -12,7 +12,7 @@
             [clojure.string :as string]
             [tile-map.line :as line]
             [tile-map.map :as tm]
-            [cljs.core.async :refer [chan close! >! <!]]
+            [cljs.core.async :refer [chan close! >! <! timeout]]
 )
   (:require-macros [cljs.core.async.macros :refer [go]]
                    [infinitelives.pixi.macros :as m]
@@ -180,6 +180,15 @@
     :minus-v-edge minus-v-edge}
    pos new-pos old-pos))
 
+(defn dynamite-constrain [pass? pos old-pos new-pos]
+  (line/constrain-offset
+   {:passable? pass?
+    :h-edge 0.1
+    :v-edge 0.3
+    :minus-h-edge 0.9
+    :minus-v-edge 0.5}
+   pos new-pos old-pos))
+
 (defn which-platform? [old-pos platform-pos platform2-pos platform3-pos]
   (let [start old-pos
         end1 (vec2/add old-pos (vec2/vec2 0 0.1))
@@ -224,6 +233,50 @@
 
 (defn platform3-fn [fnum] (vec2/vec2 (+ 62 (* 3 (Math/sin (/ fnum 60)))) 20))
 
+(def gravity (vec2/vec2 0 0.01))
+
+(defn make-dynamite [container pos vel start-frame]
+  (go
+    (m/with-sprite container
+      [sprite (s/make-sprite :dynamite-5 :scale 1 :x (vec2/get-x pos) :y (vec2/get-y pos))]
+      (loop [n 0
+             p pos
+             v vel]
+        (s/set-pos! sprite (vec2/scale p 16))
+        (<! (e/next-frame))
+        (when (< n 300)
+          (if (pos? (mod n 3))
+            (let [frame (int (/ n 60))
+                  texture (nth [:dynamite-5 :dynamite-4 :dynamite-3 :dynamite-2 :dynamite-1] frame)]
+              (s/set-texture! sprite (t/get-texture texture)))
+            (s/set-texture! sprite (t/get-texture :dynamite-1)))
+          (let [new-pos (->> (vec2/add p v)
+                             (dynamite-constrain passable? (vec2/zero) p)
+                             (dynamite-constrain platform-passable? (platform-fn (+ 1 start-frame n)) p)
+                             (dynamite-constrain platform2-passable? (platform2-fn (+ 1 start-frame n)) p)
+                             (dynamite-constrain platform2-passable? (platform3-fn (+ 1 start-frame n)) p)
+                             )
+                new-vel (-> new-pos
+                            (vec2/sub p)
+                            (vec2/add gravity)
+                            (vec2/scale 0.98))]
+            (recur (inc n)
+                   new-pos
+                   new-vel
+                   ))))
+
+      ;; explode
+      (loop [[f & r] [:explosion-1 :explosion-2
+                      :explosion-3 :explosion-4
+                      :explosion-5 :explosion-6]]
+        (s/set-texture! sprite (t/get-texture f))
+        (<! (e/next-frame))
+        (<! (e/next-frame))
+        (when r
+          (recur r))
+        )
+      )))
+
 (defonce main
   (go
     ;; load image tilesets
@@ -256,11 +309,9 @@
     (let [tile-set (tm/make-tile-set :tiles)
           stand (t/sub-texture (r/get-texture :tiles :nearest) [0 96] [16 16])
           walk (t/sub-texture (r/get-texture :tiles :nearest) [16 96] [16 16])
-          gravity (vec2/vec2 0 0.01)
-
           tilemap-order-lookup (tm/make-tiles-struct tile-set tile-map)
 
-          dynamite (make-text-display :dynamite-5 0 :numbers 0)
+          dynamite (make-text-display :dynamite-5 0 :numbers 10)
           gold (make-text-display :gold -64 :numbers 0)
           ]
 
@@ -297,6 +348,7 @@
                      :xhandle 0 :yhandle 0
                      :scale 4
                      :particle true)
+         dynamites (s/make-container :scale 4 :particle false)
 
          ]
         (s/set-scale! background 4)
@@ -307,7 +359,8 @@
                ppos (vec2/vec2 1.5 4.5)
                jump-pressed 0
                gold-num 0
-               dynamite-num 0]
+               dynamite-num 10
+               last-x-pressed? (e/is-pressed? :x)]
 
           (let [
                 old-pos ppos
@@ -349,6 +402,7 @@
             (s/set-texture! player (if (zero? (mod (int (/ fnum 10)) 2)) stand walk))
             (set-player player (int x) (int y) px py)
             (s/set-pos! tilemap (int x) (int y))
+            (s/set-pos! dynamites (int x) (int y))
             (s/set-pos! platform (vec2/add
                                   (vec2/scale old-platform-pos (* 4 16))
                                   (vec2/vec2 x y)))
@@ -389,7 +443,9 @@
                                     (inc gold-num)))))
                             gold-num)
 
-                  new-dynamite dynamite
+                  new-dynamite (if (e/is-pressed? :r) (inc dynamite-num) dynamite-num)
+                  _ (when (not= dynamite-num new-dynamite)
+                      (>! dynamite new-dynamite))
 
                   ladder-up? (#{:ladder :ladder-top} square-standing-on)
                   ladder-down? (#{:ladder :ladder-top} square-below)
@@ -517,11 +573,19 @@
                   old-vel (if (= :walking state) (vec2/sub con-pos old-pos)
                               (-> (vec2/sub con-pos old-pos)
                                   (vec2/set-y 0)))
+
+                  new-dynamite
+                  (if (and (pos? new-dynamite) (not last-x-pressed?) (e/is-pressed? :x))
+                    (do (make-dynamite dynamites ppos old-vel fnum)
+                        (>! dynamite (dec new-dynamite))
+                        (dec new-dynamite))
+                    new-dynamite)
                   ]
               (if (< (vec2/get-x old-vel) 0)
                 (s/set-scale! player -4 4)
                 (s/set-scale! player 4 4)
                 )
+
               (recur
                next-state
                (inc fnum)
@@ -530,4 +594,5 @@
                jump-pressed
                new-gold
                new-dynamite
+               (e/is-pressed? :x)
                ))))))))
