@@ -217,8 +217,12 @@
             (recur res)))))
     c))
 
+(defn platform-fn [fnum] (vec2/vec2 9 (+ 7 (* 2.01 (Math/sin (/ fnum 60))))))
+
 (defn platform2-fn [fnum] (vec2/vec2 (+ 56 (* 3 (Math/sin (/ fnum 40))))
                                      (+ 23 (* 3 (Math/sin (/ fnum 40))))))
+
+(defn platform3-fn [fnum] (vec2/vec2 (+ 62 (* 3 (Math/sin (/ fnum 60)))) 20))
 
 (defonce main
   (go
@@ -329,16 +333,16 @@
                                          :default 0)
                                    ))
 
-                platform-pos (vec2/vec2 9 (+ 7 (* 2.01 (Math/sin (/ fnum 60)))))
-                old-platform-pos (vec2/vec2 9 (+ 7 (* 2.01 (Math/sin (/ (dec fnum) 60)))))
+                platform-pos (platform-fn fnum)
+                old-platform-pos (platform-fn (dec fnum))
                 platform-delta (vec2/sub platform-pos old-platform-pos)
 
                 platform2-pos (platform2-fn fnum)
                 old-platform2-pos (platform2-fn (dec fnum))
                 platform2-delta (vec2/sub platform2-pos old-platform2-pos)
 
-                platform3-pos (vec2/vec2 (+ 62 (* 3 (Math/sin (/ fnum 60)))) 20)
-                old-platform3-pos (vec2/vec2 (+ 62 (* 3 (Math/sin (/ (dec fnum) 60)))) 20)
+                platform3-pos (platform3-fn fnum)
+                old-platform3-pos (platform3-fn (dec fnum))
                 platform3-delta (vec2/sub platform3-pos old-platform3-pos)
                 ]
 
@@ -346,13 +350,13 @@
             (set-player player (int x) (int y) px py)
             (s/set-pos! tilemap (int x) (int y))
             (s/set-pos! platform (vec2/add
-                                  (vec2/scale platform-pos (* 4 16))
+                                  (vec2/scale old-platform-pos (* 4 16))
                                   (vec2/vec2 x y)))
             (s/set-pos! platform2 (vec2/add
-                                   (vec2/scale platform2-pos (* 4 16))
+                                   (vec2/scale old-platform2-pos (* 4 16))
                                    (vec2/vec2 x y)))
             (s/set-pos! platform3 (vec2/add
-                                   (vec2/scale platform3-pos (* 4 16))
+                                   (vec2/scale old-platform3-pos (* 4 16))
                                    (vec2/vec2 x y)))
             (s/set-pos! foreground (int x) (int y))
             (s/set-pos! background
