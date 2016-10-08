@@ -398,21 +398,7 @@
                   ;; question. If the y value is the same between the
                   ;; two end points, then we are standing on the
                   ;; platform (even if platform is moving!)
-                  plat (let [start old-pos
-                             end1 (vec2/add old-pos (vec2/vec2 0 0.1))
-                             end2 (vec2/add old-pos (vec2/vec2 0 0.3))
-
-                             platform-tests
-                             (for [[test? vel] [[walkable? (vec2/zero)]
-                                                [platform-passable? platform-pos]
-                                                [platform2-passable? platform2-pos]
-                                                [platform2-passable? platform3-pos]]]
-                               (= (vec2/get-y (platform-constrain test? vel start end1))
-                                  (vec2/get-y (platform-constrain test? vel start end2))))
-                             indexed-tests (map vector (range) platform-tests)
-                             matching-indexed-tests (map first (filter second indexed-tests))
-                             ]
-                         (first matching-indexed-tests))
+                  plat (which-platform? old-pos platform-pos platform2-pos platform3-pos)
 
                   ;; move oldpos by platform movement
                   old-pos (case plat
@@ -512,7 +498,8 @@
                               (vec2/add jump-force)
                               (vec2/add joy-acc)
                               (vec2/add (vec2/scale player-brake (/ player-vel-x 3)))
-                              (vec2/scale 0.98))
+                              (vec2/scale 0.98)
+                              )
 
                   new-pos (-> old-pos
                               (vec2/add new-vel))
