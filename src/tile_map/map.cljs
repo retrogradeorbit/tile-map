@@ -36,7 +36,7 @@
 (defn remap [y-1 y y+1]
   (match [y-1 y y+1]
          ;; put top-bottom dirt tiles where the dirt is solo
-         [(t :guard #{:stone :ladder-top :ladder :crate :pot :web :space :gold}) :dirt (b :guard #{:stone :ladder-top :ladder :crate :pot :web :space})]
+         [(t :guard #{:stone :ladder-top :ladder :crate :pot :web :space :gold}) :dirt (b :guard #{:stone :ladder-top :ladder :crate :pot :web :space :gold})]
          :dirt-top-bottom
 
          ;; put bottom dirt tiles where the dirt ends
