@@ -189,6 +189,14 @@
     :minus-v-edge 0.5}
    pos new-pos old-pos))
 
+;; work out if we are standing on a platform, and if
+;; so, which one?  to do this, we simulate the
+;; player falling every so slightly by a small
+;; amount and by a larger amount. we then constrain
+;; both these movements by the platform in
+;; question. If the y value is the same between the
+;; two end points, then we are standing on the
+;; platform (even if platform is moving!)
 (defn which-platform? [old-pos platform-pos platform2-pos platform3-pos]
   (let [start old-pos
         end1 (vec2/add old-pos (vec2/vec2 0 0.1))
@@ -455,14 +463,6 @@
                   ladder-up? (#{:ladder :ladder-top} square-standing-on)
                   ladder-down? (#{:ladder :ladder-top} square-below)
 
-                  ;; work out if we are standing on a platform, and if
-                  ;; so, which one?  to do this, we simulate the
-                  ;; player falling every so slightly by a small
-                  ;; amount and by a larger amount. we then constrain
-                  ;; both these movements by the platform in
-                  ;; question. If the y value is the same between the
-                  ;; two end points, then we are standing on the
-                  ;; platform (even if platform is moving!)
                   plat (which-platform? old-pos platform-pos platform2-pos platform3-pos)
 
                   ;; move oldpos by platform movement
