@@ -236,15 +236,27 @@
 
 (def platforms
   {
+   :level
+   {:fn (fn [_] (vec2/zero))
+    :passable? walkable?
+    :apply? (fn [_] true)}
+
    :t-plaform
-   {:fn (fn [fnum] (vec2/vec2 9 (+ 7 (* 2.01 (Math/sin (/ fnum 60))))))}
+   {:fn (fn [fnum] (vec2/vec2 9 (+ 7 (* 2.01 (Math/sin (/ fnum 60))))))
+    :passable? platform-passable?
+    :apply? (fn [pos] true)}
 
    :diagonal
    {:fn (fn [fnum] (vec2/vec2 (+ 56 (* 3 (Math/sin (/ fnum 40))))
-                              (+ 23 (* 3 (Math/sin (/ fnum 40))))))}
+                              (+ 23 (* 3 (Math/sin (/ fnum 40))))))
+    :passable? platform2-passable?
+    :apply? (fn [pos] true)
+    }
 
    :horizontal
-   {:fn (fn [fnum] (vec2/vec2 (+ 62 (* 3 (Math/sin (/ fnum 60)))) 20))}
+   {:fn (fn [fnum] (vec2/vec2 (+ 62 (* 3 (Math/sin (/ fnum 60)))) 20))
+    :passable? platform2-passable?
+    :apply? (fn [pos] true)}
    })
 
 (def platform-fn (:t-platform platforms))
