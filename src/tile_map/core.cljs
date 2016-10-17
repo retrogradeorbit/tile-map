@@ -234,12 +234,22 @@
             (recur res)))))
     c))
 
-(defn platform-fn [fnum] (vec2/vec2 9 (+ 7 (* 2.01 (Math/sin (/ fnum 60))))))
+(def platforms
+  {
+   :t-plaform
+   {:fn (fn [fnum] (vec2/vec2 9 (+ 7 (* 2.01 (Math/sin (/ fnum 60))))))}
 
-(defn platform2-fn [fnum] (vec2/vec2 (+ 56 (* 3 (Math/sin (/ fnum 40))))
-                                     (+ 23 (* 3 (Math/sin (/ fnum 40))))))
+   :diagonal
+   {:fn (fn [fnum] (vec2/vec2 (+ 56 (* 3 (Math/sin (/ fnum 40))))
+                              (+ 23 (* 3 (Math/sin (/ fnum 40))))))}
 
-(defn platform3-fn [fnum] (vec2/vec2 (+ 62 (* 3 (Math/sin (/ fnum 60)))) 20))
+   :horizontal
+   {:fn (fn [fnum] (vec2/vec2 (+ 62 (* 3 (Math/sin (/ fnum 60)))) 20))}
+   })
+
+(def platform-fn (:t-platform platforms))
+(def platform2-fn (:diagonal platforms))
+(def platform3-fn (:horizontal platforms))
 
 (def gravity (vec2/vec2 0 0.01))
 
