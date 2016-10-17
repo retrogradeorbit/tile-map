@@ -447,9 +447,10 @@
                   on-gold? (= :gold square-standing-on)
                   new-gold (or
                             (when on-gold?
-                                        ;(log "gold" pix piy (tilemap-order-lookup [pix piy]))
                               (when (tilemap-order-lookup [pix piy])
-                                (let [child (.getChildAt tilemap (tilemap-order-lookup [pix piy]))]
+                                (let [child
+                                      (.getChildAt tilemap
+                                                   (tilemap-order-lookup [pix piy]))]
                                   (when (= 1 (.-alpha child))
                                     (s/set-alpha! child 0)
                                     (>! gold (inc gold-num))
