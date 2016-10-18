@@ -236,10 +236,22 @@
 
    {:fn (fn [fnum] (vec2/vec2 (+ 62 (* 3 (Math/sin (/ fnum 60)))) 20))
     :passable? platform2-passable?
+    :apply? (fn [pos] true)}])
 
-(def platform-fn (:t-platform platforms))
-(def platform2-fn (:diagonal platforms))
-(def platform3-fn (:horizontal platforms))
+(defn constrain-pos [platforms old-pos new-pos]
+  (reduce
+   (fn [pos {:keys [passable? platform-pos]}]
+     (platform-constrain pos passable? platform-pos old-pos ))
+   new-pos platforms))
+
+(defn prepare-platforms [platforms fnum pos]
+  (->> platforms
+       (filter #((:apply? %) pos))
+       (map #(assoc % :pos ((:fn %) fnum)))))
+
+(def platform-fn (:fn (platforms 1)))
+(def platform2-fn (:fn (platforms 2)))
+(def platform3-fn (:fn (platforms 3)))
 
 (def gravity (vec2/vec2 0 0.01))
 
