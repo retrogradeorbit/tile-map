@@ -238,16 +238,16 @@
     :passable? platform2-passable?
     :apply? (fn [pos] true)}])
 
-(defn constrain-pos [platforms old-pos new-pos]
+(defn constrain-pos [constrain-fn platforms old-pos new-pos]
   (reduce
    (fn [pos {:keys [passable? platform-pos]}]
-     (platform-constrain pos passable? platform-pos old-pos ))
+     (constrain-fn passable? platform-pos old-pos pos))
    new-pos platforms))
 
 (defn prepare-platforms [platforms fnum pos]
   (->> platforms
        (filter #((:apply? %) pos))
-       (map #(assoc % :pos ((:fn %) fnum)))))
+       (map #(assoc % :platform-pos ((:fn %) fnum)))))
 
 (def platform-fn (:fn (platforms 1)))
 (def platform2-fn (:fn (platforms 2)))
@@ -270,12 +270,10 @@
                   texture (nth [:dynamite-5 :dynamite-4 :dynamite-3 :dynamite-2 :dynamite-1] frame)]
               (s/set-texture! sprite (t/get-texture texture)))
             (s/set-texture! sprite (t/get-texture :dynamite-1)))
-          (let [new-pos (->> (vec2/add p v)
-                             (dynamite-constrain passable? (vec2/zero) p)
-                             (dynamite-constrain platform-passable? (platform-fn (+ 1 start-frame n)) p)
-                             (dynamite-constrain platform2-passable? (platform2-fn (+ 1 start-frame n)) p)
-                             (dynamite-constrain platform2-passable? (platform3-fn (+ 1 start-frame n)) p)
-                             )
+          (let [platform-state (prepare-platforms platforms n (vec2/zero))
+                new-pos (constrain-pos dynamite-constrain
+                                       (prepare-platforms platforms (+ 1 start-frame n) p)
+                                       p (vec2/add p v))
                 new-vel (-> new-pos
                             (vec2/sub p)
                             (vec2/add gravity)
@@ -489,12 +487,9 @@
                   ;; simulate a little vertical move down to see if we are
                   ;; standing on solid ground (or a platform)
                   fallen-pos
-                  (->>
-                   (vec2/add old-pos (vec2/vec2 0 0.1))
-                   (platform-constrain walkable? (vec2/zero) old-pos)
-                   (platform-constrain platform-passable? platform-pos old-pos)
-                   (platform-constrain platform2-passable? platform2-pos old-pos)
-                   (platform-constrain platform2-passable? platform3-pos old-pos))
+                  (constrain-pos platform-constrain
+                                 (prepare-platforms platforms fnum old-pos)
+                                 old-pos (vec2/add old-pos (vec2/vec2 0 0.1)))
 
                   ;; TODO: this is dodgy. We need to test with each platform.
                   ;; if we are standing on a platform, we are "bound to it"
@@ -597,8 +592,7 @@
                     (do (make-dynamite dynamites ppos old-vel fnum)
                         (>! dynamite (dec new-dynamite))
                         (dec new-dynamite))
-                    new-dynamite)
-                  ]
+                    new-dynamite)]
               (case facing
                 :left (s/set-scale! player -4 4)
                 :right (s/set-scale! player 4 4)
