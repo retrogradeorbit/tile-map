@@ -157,20 +157,6 @@
    (e/is-pressed? :space)
    (gp/button-pressed? 0 :x)))
 
-(def platforms
-  [
-   {:passable? platform-passable?
-    :pos-fn #(vec2/vec2 9 (+ 7 (* 2.01 (Math/sin (/ % 60)))))}
-
-   {:passable? platform2-passable?
-    :pos-fn #(vec2/vec2 56 (+ 23 (* 3 (Math/sin (/ % 60)))))}
-
-   {:passable? platform2-passable?
-    :pos-fn #(vec2/vec2 (+ 62 (* 3 (Math/sin (/ % 60))))
-                        20)}
-
-   ])
-
 (defn platform-constrain [pass? pos old-pos new-pos]
   (line/constrain-offset
    {:passable? pass?
