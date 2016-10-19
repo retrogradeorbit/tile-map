@@ -577,11 +577,10 @@
                   new-pos (-> old-pos
                               (vec2/add new-vel))
 
-                  con-pos (->> new-pos
-                               (platform-constrain passable-fn (vec2/zero) old-pos)
-                               (platform-constrain platform-passable? platform-pos old-pos)
-                               (platform-constrain platform2-passable? platform2-pos old-pos)
-                               (platform-constrain platform2-passable? platform3-pos old-pos))
+                  con-pos
+                  (constrain-pos platform-constrain
+                                 (prepare-platforms platforms fnum old-pos)
+                                 old-pos new-pos)
 
                   old-vel (if (= :walking state) (vec2/sub con-pos old-pos)
                               (-> (vec2/sub con-pos old-pos)
