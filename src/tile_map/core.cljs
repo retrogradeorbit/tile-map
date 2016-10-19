@@ -238,6 +238,10 @@
     :passable? platform2-passable?
     :apply? (fn [pos] true)}])
 
+(def platform-fn (:fn (platforms 1)))
+(def platform2-fn (:fn (platforms 2)))
+(def platform3-fn (:fn (platforms 3)))
+
 (defn constrain-pos [constrain-fn platforms old-pos new-pos]
   (reduce
    (fn [pos {:keys [passable? platform-pos]}]
@@ -247,11 +251,12 @@
 (defn prepare-platforms [platforms fnum pos]
   (->> platforms
        (filter #((:apply? %) pos))
-       (map #(assoc % :platform-pos ((:fn %) fnum)))))
-
-(def platform-fn (:fn (platforms 1)))
-(def platform2-fn (:fn (platforms 2)))
-(def platform3-fn (:fn (platforms 3)))
+       (map #(let [platform-pos ((:fn %) fnum)
+                   old-platform-pos ((:fn %) (dec fnum))]
+               (assoc %
+                      :platform-pos platform-pos
+                      :old-platform-pos old-platform-pos
+                      :platform-delta (vec2/sub platform-pos old-platform-pos))))))
 
 (def gravity (vec2/vec2 0 0.01))
 
