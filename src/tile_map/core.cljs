@@ -252,15 +252,18 @@
      (constrain-fn passable? platform-pos old-pos pos))
    new-pos platforms))
 
-(defn prepare-platforms [platforms fnum pos]
+(defn prepare-platforms [platforms fnum]
   (->> platforms
-       (filter #((:apply? %) pos))
        (map #(let [platform-pos ((:fn %) fnum)
                    old-platform-pos ((:fn %) (dec fnum))]
                (assoc %
                       :platform-pos platform-pos
                       :old-platform-pos old-platform-pos
                       :platform-delta (vec2/sub platform-pos old-platform-pos))))))
+
+(defn filter-platforms [platforms pos]
+  (->> platforms
+       (filter #((:apply? %) pos))))
 
 (def gravity (vec2/vec2 0 0.01))
 
