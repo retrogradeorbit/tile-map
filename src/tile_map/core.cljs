@@ -409,17 +409,11 @@
                                          :default 0)
                                    ))
 
-                platform-pos (platform-fn fnum)
-                old-platform-pos (platform-fn (dec fnum))
-                platform-delta (vec2/sub platform-pos old-platform-pos)
+                platforms-this-frame (prepare-platforms platforms fnum)
 
-                platform2-pos (platform2-fn fnum)
-                old-platform2-pos (platform2-fn (dec fnum))
-                platform2-delta (vec2/sub platform2-pos old-platform2-pos)
-
-                platform3-pos (platform3-fn fnum)
-                old-platform3-pos (platform3-fn (dec fnum))
-                platform3-delta (vec2/sub platform3-pos old-platform3-pos)
+                ;; platform subset for player
+                filtered-platforms (filter-platforms
+                                    platforms-this-frame old-pos)
                 ]
 
             (s/set-texture! player
