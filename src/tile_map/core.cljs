@@ -421,17 +421,18 @@
                               (if (zero? (mod (int (/ fnum 10)) 2)) stand walk)
                               stand))
             (set-player player (int x) (int y) px py)
-            (s/set-pos! tilemap (int x) (int y))
             (s/set-pos! dynamites (int x) (int y))
-            (s/set-pos! platform (vec2/add
-                                  (vec2/scale old-platform-pos (* 4 16))
-                                  (vec2/vec2 x y)))
-            (s/set-pos! platform2 (vec2/add
-                                   (vec2/scale old-platform2-pos (* 4 16))
-                                   (vec2/vec2 x y)))
-            (s/set-pos! platform3 (vec2/add
-                                   (vec2/scale old-platform3-pos (* 4 16))
-                                   (vec2/vec2 x y)))
+
+            ;; set tilemap positions
+            (doall
+             (map
+              (fn [{:keys [old-platform-pos]} obj]
+                (s/set-pos! obj (vec2/add
+                                 (vec2/scale old-platform-pos (* 4 16))
+                                 (vec2/vec2 x y))))
+              platforms-this-frame
+              [tilemap platform platform2 platform3]))
+
             (s/set-pos! foreground (int x) (int y))
             (s/set-pos! background
                         (+ -2000 (mod (int (* x 0.90)) (* 4 32)))
