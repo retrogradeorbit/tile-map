@@ -237,10 +237,6 @@
     :passable? platform2-passable?
     :apply? (fn [pos] true)}])
 
-(def platform-fn (:fn (platforms 1)))
-(def platform2-fn (:fn (platforms 2)))
-(def platform3-fn (:fn (platforms 3)))
-
 (defn constrain-pos [constrain-fn platforms old-pos new-pos]
   (reduce
    (fn [pos {:keys [passable? platform-pos]}]
