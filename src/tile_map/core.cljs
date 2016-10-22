@@ -183,16 +183,17 @@
 ;; question. If the y value is the same between the
 ;; two end points, then we are standing on the
 ;; platform (even if platform is moving!)
-(defn which-platform? [old-pos platforms]
+(defn which-platform? [old-pos plats]
   (let [start old-pos
+        num (count plats)
         end1 (vec2/add old-pos (vec2/vec2 0 0.1))
         end2 (vec2/add old-pos (vec2/vec2 0 0.3))]
     (loop [n 0]
-      (let [{:keys [passable? platform-pos]} (nth platforms n)]
+      (let [{:keys [passable? platform-pos]} (nth plats n)]
         (if (= (vec2/get-y (platform-constrain passable? platform-pos start end1))
                (vec2/get-y (platform-constrain passable? platform-pos start end2)))
           n
-          (when (< n 3)
+          (when (< n (dec num))
             (recur (inc n))))))))
 
 (defn make-text-display
