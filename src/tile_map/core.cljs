@@ -225,18 +225,34 @@
    {:name :t-platform
     :fn (fn [fnum] (vec2/vec2 9 (+ 7 (* 2.01 (Math/sin (/ fnum 60))))))
     :passable? platform-passable?
-    :apply? (fn [pos] true)}
+    :apply? (fn [pos] (let [x (vec2/get-x pos)
+                            y (vec2/get-y pos)]
+                        (and
+                         (<= 9 x 14)
+                         (<= 5 y 13))))}
 
    {:name :diagonal
     :fn (fn [fnum] (vec2/vec2 (+ 56 (* 3 (Math/sin (/ fnum 40))))
                               (+ 23 (* 3 (Math/sin (/ fnum 40))))))
     :passable? platform2-passable?
-    :apply? (fn [pos] true)}
+    :apply? (fn [pos]
+              (let [x (vec2/get-x pos)
+                    y (vec2/get-y pos)]
+                (and
+                 (<= 50 x 65)
+                 (<= 17 y 29))))}
 
    {:name :horizontal
     :fn (fn [fnum] (vec2/vec2 (+ 62 (* 3 (Math/sin (/ fnum 60)))) 20))
     :passable? platform2-passable?
-    :apply? (fn [pos] true)}])
+    :apply? (fn [pos]
+              (let [x (vec2/get-x pos)
+                    y (vec2/get-y pos)]
+;                (log x y)
+                (and
+                 (<= 59 x 70)
+                 (<= 19 y 22)))
+              )}])
 
 (defn constrain-pos [constrain-fn platforms old-pos new-pos]
   (reduce
@@ -246,7 +262,7 @@
 
 (defn prepare-platforms [platforms fnum]
   (->> platforms
-       (map #(let [platform-pos ((:fn %) fnum)
+       (mapv #(let [platform-pos ((:fn %) fnum)
                    old-platform-pos ((:fn %) (dec fnum))]
                (assoc %
                       :platform-pos platform-pos
@@ -255,7 +271,7 @@
 
 (defn filter-platforms [platforms pos]
   (->> platforms
-       (filter #((:apply? %) pos))))
+       (filterv #((:apply? %) pos))))
 
 (def gravity (vec2/vec2 0 0.01))
 
@@ -473,11 +489,11 @@
                   ladder-up? (#{:ladder :ladder-top} square-standing-on)
                   ladder-down? (#{:ladder :ladder-top} square-below)
 
-                  plat (which-platform? old-pos platforms-this-frame)
+                  plat (which-platform? old-pos filtered-platforms)
 
                   ;; move oldpos by platform movement
                   old-pos (if plat
-                            (-> platforms-this-frame
+                            (-> filtered-platforms
                                 (nth plat)
                                 :platform-delta
                                 (vec2/add old-pos))
@@ -576,7 +592,9 @@
                               (vec2/add new-vel))
 
                   con-pos
-                  (constrain-pos platform-constrain filtered-platforms old-pos new-pos)
+                  (constrain-pos platform-constrain
+                                 (assoc-in filtered-platforms [0 :passable?] passable-fn)
+                                 old-pos new-pos)
 
                   old-vel (if (= :walking state) (vec2/sub con-pos old-pos)
                               (-> (vec2/sub con-pos old-pos)
