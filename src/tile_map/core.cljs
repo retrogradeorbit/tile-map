@@ -259,7 +259,7 @@
 (def gravity (vec2/vec2 0 0.01))
 
 (defn make-dynamite [container pos vel start-frame]
-  (go
+  #_ (go
     (m/with-sprite container
       [sprite (s/make-sprite :dynamite-5 :scale 1 :x (vec2/get-x pos) :y (vec2/get-y pos))]
       (loop [n 0
