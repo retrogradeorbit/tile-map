@@ -472,21 +472,20 @@
                   ladder-up? (#{:ladder :ladder-top} square-standing-on)
                   ladder-down? (#{:ladder :ladder-top} square-below)
 
-                  plat (which-platform? old-pos platform-pos platform2-pos platform3-pos)
+                  plat (which-platform? old-pos platforms-this-frame)
 
                   ;; move oldpos by platform movement
-                  old-pos (case plat
-                            0 old-pos
-                            1 (vec2/add old-pos platform-delta)
-                            2 (vec2/add old-pos platform2-delta)
-                            3 (vec2/add old-pos platform3-delta)
-                            nil old-pos)
+                  old-pos (if plat
+                            (-> platforms-this-frame
+                                (nth plat)
+                                :platform-delta
+                                (vec2/add old-pos))
+                            old-pos)
 
                   ;; simulate a little vertical move down to see if we are
                   ;; standing on solid ground (or a platform)
                   fallen-pos
-                  (constrain-pos platform-constrain
-                                 (prepare-platforms platforms fnum old-pos)
+                  (constrain-pos platform-constrain filtered-platforms
                                  old-pos (vec2/add old-pos (vec2/vec2 0 0.1)))
 
                   ;; TODO: this is dodgy. We need to test with each platform.
@@ -576,9 +575,7 @@
                               (vec2/add new-vel))
 
                   con-pos
-                  (constrain-pos platform-constrain
-                                 (prepare-platforms platforms fnum old-pos)
-                                 old-pos new-pos)
+                  (constrain-pos platform-constrain filtered-platforms old-pos new-pos)
 
                   old-vel (if (= :walking state) (vec2/sub con-pos old-pos)
                               (-> (vec2/sub con-pos old-pos)
