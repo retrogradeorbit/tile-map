@@ -183,19 +183,14 @@
 ;; question. If the y value is the same between the
 ;; two end points, then we are standing on the
 ;; platform (even if platform is moving!)
-(defn which-platform? [old-pos platform-pos platform2-pos platform3-pos]
+(defn which-platform? [old-pos platforms]
   (let [start old-pos
         end1 (vec2/add old-pos (vec2/vec2 0 0.1))
-        end2 (vec2/add old-pos (vec2/vec2 0 0.3))
-        plats [[walkable? (vec2/zero)]
-               [platform-passable? platform-pos]
-               [platform2-passable? platform2-pos]
-               [platform2-passable? platform3-pos]]
-        ]
+        end2 (vec2/add old-pos (vec2/vec2 0 0.3))]
     (loop [n 0]
-      (let [[test? vel] (nth plats n)]
-        (if (= (vec2/get-y (platform-constrain test? vel start end1))
-               (vec2/get-y (platform-constrain test? vel start end2)))
+      (let [{:keys [passable? platform-pos]} (nth platforms n)]
+        (if (= (vec2/get-y (platform-constrain passable? platform-pos start end1))
+               (vec2/get-y (platform-constrain passable? platform-pos start end2)))
           n
           (when (< n 3)
             (recur (inc n))))))))
