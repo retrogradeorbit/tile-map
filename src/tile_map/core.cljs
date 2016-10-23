@@ -248,11 +248,9 @@
     :apply? (fn [pos]
               (let [x (vec2/get-x pos)
                     y (vec2/get-y pos)]
-;                (log x y)
                 (and
                  (<= 59 x 70)
-                 (<= 19 y 22)))
-              )}])
+                 (<= 19 y 22))))}])
 
 (defn constrain-pos [constrain-fn platforms old-pos new-pos]
   (reduce
@@ -276,7 +274,7 @@
 (def gravity (vec2/vec2 0 0.01))
 
 (defn make-dynamite [container pos vel start-frame]
-  #_ (go
+  (go
     (m/with-sprite container
       [sprite (s/make-sprite :dynamite-5 :scale 1 :x (vec2/get-x pos) :y (vec2/get-y pos))]
       (loop [n 0
@@ -290,18 +288,24 @@
                   texture (nth [:dynamite-5 :dynamite-4 :dynamite-3 :dynamite-2 :dynamite-1] frame)]
               (s/set-texture! sprite (t/get-texture texture)))
             (s/set-texture! sprite (t/get-texture :dynamite-1)))
-          (let [platform-state (prepare-platforms platforms n (vec2/zero))
-                new-pos (constrain-pos dynamite-constrain
-                                       (prepare-platforms platforms (+ 1 start-frame n) p)
-                                       p (vec2/add p v))
+          (let [platform-state
+                (-> platforms
+                    (prepare-platforms n)
+                    (filter-platforms (vec2/zero)))
+                new-pos
+                (constrain-pos
+                 dynamite-constrain
+                 (-> platforms
+                     (prepare-platforms (+ 1 start-frame n))
+                     (filter-platforms p))
+                 p (vec2/add p v))
                 new-vel (-> new-pos
                             (vec2/sub p)
                             (vec2/add gravity)
                             (vec2/scale 0.98))]
             (recur (inc n)
                    new-pos
-                   new-vel
-                   ))))
+                   new-vel))))
 
       ;; explode
       (loop [[f & r] [:explosion-1 :explosion-2
@@ -311,9 +315,7 @@
         (<! (e/next-frame))
         (<! (e/next-frame))
         (when r
-          (recur r))
-        )
-      )))
+          (recur r))))))
 
 (defonce main
   (go
@@ -602,7 +604,8 @@
 
                   new-dynamite
                   (if (and (pos? new-dynamite) (not last-x-pressed?) (e/is-pressed? :x))
-                    (do (make-dynamite dynamites ppos old-vel fnum)
+                    (do (make-dynamite
+                         dynamites ppos old-vel fnum)
                         (>! dynamite (dec new-dynamite))
                         (dec new-dynamite))
                     new-dynamite)]
