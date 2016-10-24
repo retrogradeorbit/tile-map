@@ -440,7 +440,7 @@
                             (if (> (Math/abs (vec2/get-x joy)) 0.02)
                               (if (zero? (mod (int (/ fnum 10)) 2)) stand walk)
                               stand))
-            (set-player player (int x) (int y) px py)
+            (set-player player x y px py)
             (s/set-pos! dynamites (int x) (int y))
 
             ;; set tilemap positions
