@@ -366,7 +366,8 @@
                   :children (tm/make-tiles tile-set tile-map)
                   :xhandle 0 :yhandle 0
                   :scale 4
-                  :particle true)
+                  :particle true
+                  :particle-opts #{:position :alpha})
          platform (s/make-container
                    :children (tm/make-tiles tile-set platform-map)
                    :xhandle 0 :yhandle 0
