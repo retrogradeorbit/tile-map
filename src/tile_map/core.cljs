@@ -337,7 +337,7 @@
 
     (go
       (m/with-sprite :title
-        [title (pf/make-text :pixel "DYNA-MINER 0.3"
+        [title (pf/make-text :pixel "DYNA-MINER 0.4"
                              :scale 4 :xhandle 0.5)
 
          ]
