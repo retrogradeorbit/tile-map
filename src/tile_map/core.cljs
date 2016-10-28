@@ -441,7 +441,7 @@
                               (if (zero? (mod (int (/ fnum 10)) 2)) stand walk)
                               stand))
             (set-player player x y px py)
-            (s/set-pos! dynamites (int x) (int y))
+            (s/set-pos! dynamites x y)
 
             ;; set tilemap positions
             (doall
@@ -453,7 +453,7 @@
               platforms-this-frame
               [tilemap platform platform2 platform3]))
 
-            (s/set-pos! foreground (int x) (int y))
+            (s/set-pos! foreground x y)
             (s/set-pos! background
                         (+ -2000 (mod (int (* x 0.90)) (* 4 32)))
                         (+ -2000 (mod (int (* y 0.90)) ( * 4 32))))
